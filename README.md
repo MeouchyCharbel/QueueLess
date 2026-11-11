@@ -41,3 +41,4 @@ Each step is one commit. Milestones are marked with git tags.
 1. Repository setup
 2. Express server scaffold
 3. Database schema, migration and seed — **milestone-1**
+4. Authentication: signup, login, JWT, role checks

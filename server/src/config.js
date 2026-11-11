@@ -3,7 +3,7 @@
 // not cause a confusing error later in the middle of a request.
 import 'dotenv/config';
 
-const REQUIRED_VARS = ['DATABASE_URL', 'CLIENT_ORIGIN'];
+const REQUIRED_VARS = ['DATABASE_URL', 'JWT_SECRET', 'CLIENT_ORIGIN'];
 
 for (const key of REQUIRED_VARS) {
   if (!process.env[key]) {
@@ -14,4 +14,5 @@ for (const key of REQUIRED_VARS) {
 export const config = {
   port: Number(process.env.PORT) || 3000,
   clientOrigin: process.env.CLIENT_ORIGIN,
+  jwtSecret: process.env.JWT_SECRET,
 };

@@ -5,17 +5,28 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './config.js';
+import { apiLimiter, authLimiter } from './middleware/rateLimits.js';
+import { authRouter } from './routes/auth.js';
 
 export const app = express();
+
+// The live API runs behind the host's proxy; this lets the rate limiter
+// see each visitor's real IP address instead of the proxy's.
+app.set('trust proxy', 1);
 
 // Order matters: every request passes through these in this order.
 app.use(helmet()); // secure HTTP headers
 app.use(cors({ origin: config.clientOrigin })); // only our front end may call the API
 app.use(express.json({ limit: '10kb' })); // parse JSON bodies, cap their size
+app.use('/api', apiLimiter);
+app.use(['/api/auth/login', '/api/auth/signup'], authLimiter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+// Public routes
+app.use('/api/auth', authRouter);
 
 // No route matched.
 app.use((req, res) => {
