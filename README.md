@@ -164,3 +164,4 @@ Each step is one commit. Milestones are marked with git tags.
 14. Booking flow: service, staff member, date, free time
 15. Customer dashboard: view, cancel, reschedule
 16. Owner business setup: profile, hours and breaks, services, staff
+17. Owner dashboard: day and week views, confirm, cancel, reschedule, complete
