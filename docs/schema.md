@@ -39,7 +39,11 @@ Service 1 → many Appointment
 
 ## Design choices
 
+- Each owner manages one business (the API answers 409 to a second one).
+- Each weekday has at most one opening period; lunch and similar gaps are breaks,
+  and every break must sit inside that day's hours.
 - Staff hours override business hours for that weekday; breaks from both apply.
+  A staff member with no hours of their own works the business hours.
 - Services and staff are deactivated (`active = false`) instead of deleted, so
   past appointments keep their history.
 - A solo business is a business with one staff member.

@@ -7,6 +7,10 @@ import helmet from 'helmet';
 import { config } from './config.js';
 import { apiLimiter, authLimiter } from './middleware/rateLimits.js';
 import { authRouter } from './routes/auth.js';
+import { categoriesRouter } from './routes/categories.js';
+import { businessesRouter } from './routes/businesses.js';
+import { servicesRouter } from './routes/services.js';
+import { staffRouter } from './routes/staff.js';
 
 export const app = express();
 
@@ -25,8 +29,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Public routes
+// Routes. Each router protects its own private routes with requireAuth
+// and requireRole, so public and private routes can share a path prefix.
 app.use('/api/auth', authRouter);
+app.use('/api/categories', categoriesRouter);
+app.use('/api/businesses', businessesRouter);
+app.use('/api', servicesRouter);
+app.use('/api', staffRouter);
 
 // No route matched.
 app.use((req, res) => {
