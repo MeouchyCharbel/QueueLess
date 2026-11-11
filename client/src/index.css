@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/*
+  QueueLess design tokens. Tailwind turns each --color-* below into classes
+  (bg-brand, text-ink, border-line, ...) and also exposes it as a CSS variable
+  on :root. Colors are named by their ROLE, not their hue. No raw hex codes
+  are used anywhere else in the app.
+
+  Brand colors (from the proposal):
+    Charcoal Black  #21232E -> ink     (text, header background)
+    Royal Blue      #105BFF -> brand   (links, primary buttons)
+    Tangerine Orange #FE8900 -> accent (highlights only)
+
+  Contrast (body text needs at least 4.5:1):
+    ink on white 15.6:1 · brand on white 5.3:1 · white on brand 5.3:1
+    ink on accent 6.5:1 · accent on ink 6.5:1
+    accent on white is only 2.4:1, so accent is NEVER used for text on a
+    light background.
+
+  Spacing: only Tailwind steps 1, 2, 4, 6, 8, 12, 16
+  (= 4, 8, 16, 24, 32, 48, 64 px), the spacing scale from the course.
+*/
+@theme {
+  --color-ink: #21232e;
+  --color-brand: #105bff;
+  --color-brand-dark: #0b45c7; /* hover state for brand buttons */
+  --color-brand-soft: #eaf1ff;
+  --color-accent: #fe8900;
+
+  --color-surface: #f6f7fb; /* page background */
+  --color-card: #ffffff;
+  --color-muted: #5b5f70; /* secondary text, 6.3:1 on white */
+  --color-line: #e3e5ec; /* borders */
+
+  --color-success: #12703a;
+  --color-success-soft: #eaf7ef;
+  --color-danger: #b42318;
+  --color-danger-soft: #fef0ee;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-ink font-sans antialiased;
+    line-height: 1.5;
+  }
+
+  h1,
+  h2,
+  h3 {
+    line-height: 1.2;
+    @apply font-semibold;
+  }
+
+  /* Visible keyboard focus everywhere (accessibility). */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand;
+  }
+}

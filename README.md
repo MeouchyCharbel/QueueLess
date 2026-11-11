@@ -14,7 +14,7 @@ conflicting bookings on the server.
 
 ```
 QueueLess/
-├── client/   # React front end (added in step 11)
+├── client/   # React front end (Vite, TypeScript, Tailwind CSS)
 ├── server/   # Express REST API
 └── docs/     # Wireframes and database schema
 ```
@@ -44,6 +44,22 @@ bookings for the same staff member, allows back-to-back bookings, and lets only
 one of two simultaneous bookings win. It runs against the database in
 `DATABASE_URL`, creates its own test data, deletes it afterwards, and never
 sends real emails.
+
+## Running the front end locally
+
+Start the API first (see above), then in a second terminal:
+
+```bash
+cd client
+npm install
+cp .env.example .env        # VITE_API_URL=http://localhost:3000
+npm run dev                 # http://localhost:5173
+```
+
+Colors come from the brand palette and are defined once, as role-named
+tokens, in `client/src/index.css`: Charcoal Black `#21232E` (text, header),
+Royal Blue `#105BFF` (links, buttons) and Tangerine Orange `#FE8900`
+(accents only, since it is too light for text on white).
 
 Design documents: [wireframes](docs/wireframes.md) and [database schema](docs/schema.md).
 
@@ -142,3 +158,4 @@ Each step is one commit. Milestones are marked with git tags.
 8. Appointments API: book, list, confirm, cancel, complete, reschedule
 9. Email notifications with Resend
 10. Back-end test: overlapping bookings are rejected — **milestone-2**
+11. Front-end scaffold: Vite, React, TypeScript, Tailwind, routing
