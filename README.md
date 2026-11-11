@@ -24,3 +24,4 @@ QueueLess/
 Each step is one commit. Milestones are marked with git tags.
 
 1. Repository setup
+2. Express server scaffold
