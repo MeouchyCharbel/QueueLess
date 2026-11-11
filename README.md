@@ -48,6 +48,7 @@ All bodies are JSON. 🔒 = needs `Authorization: Bearer <token>`;
 | GET | `/api/categories` | public | 200 list | — |
 | GET | `/api/businesses?categoryId=&location=` | public | 200 list (bookable businesses only) | 400 |
 | GET | `/api/businesses/:id` | public | 200 business + active services and staff | 404 |
+| GET | `/api/businesses/:id/availability?serviceId=&staffId=&date=YYYY-MM-DD` | public | 200 `{ date, timezone, slots }` | 400, 404 |
 | POST | `/api/businesses` | owner | 201 business | 400, 403, 409 |
 | GET | `/api/businesses/mine` | owner | 200 business + services, staff, hours | 404 |
 | PATCH | `/api/businesses/:id` | owner | 200 business | 400, 404 |
@@ -78,6 +79,16 @@ Example bodies:
 Another owner's business, service or staff member is answered with 404,
 exactly like one that does not exist.
 
+### Availability engine
+
+`server/src/lib/availability.js` offers a start time (every 15 minutes) only
+when the whole appointment fits inside that weekday's working hours, misses
+every break, does not overlap another active appointment of the same staff
+member, and starts in the future. Business hours are read in Beirut time
+(`APP_TIMEZONE`), including the summer/winter clock change. Booking uses the
+same check, and a PostgreSQL exclusion constraint blocks double bookings even
+when two customers book at the same moment.
+
 ## Build steps
 
 Each step is one commit. Milestones are marked with git tags.
@@ -88,3 +99,4 @@ Each step is one commit. Milestones are marked with git tags.
 4. Authentication: signup, login, JWT, role checks
 5. Business setup API: profile, working hours, services, staff
 6. Business search API: category and location filters
+7. Availability engine: free time slots

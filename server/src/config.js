@@ -15,4 +15,7 @@ export const config = {
   port: Number(process.env.PORT) || 3000,
   clientOrigin: process.env.CLIENT_ORIGIN,
   jwtSecret: process.env.JWT_SECRET,
+  // Business hours ("09:00") are read in this timezone. Beirut by default;
+  // it also handles the summer/winter clock change automatically.
+  timezone: process.env.APP_TIMEZONE || 'Asia/Beirut',
 };
