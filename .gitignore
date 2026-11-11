@@ -1,0 +1,17 @@
+# Dependencies — rebuilt with `npm install`, never committed
+node_modules/
+
+# Build output
+dist/
+coverage/
+
+# Secrets — real values live only on each machine / on the host's settings page.
+# Only the .env.example files (names, no values) are committed.
+.env
+.env.*
+!.env.example
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
