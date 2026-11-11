@@ -54,3 +54,13 @@ export function zonedDateTime(date, minutes, timeZone = config.timezone) {
   utcMs = asIfUtc - offsetMinutes(utcMs, timeZone) * 60_000;
   return new Date(utcMs);
 }
+
+// The calendar date ("YYYY-MM-DD") of a moment, as seen in the app timezone.
+// Example: 2026-11-19T23:30Z is already "2026-11-20" in Beirut.
+export function localDateOf(moment, timeZone = config.timezone) {
+  // The en-CA locale writes dates as YYYY-MM-DD.
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(moment);
+}

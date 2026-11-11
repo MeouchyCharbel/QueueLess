@@ -12,6 +12,7 @@ import { businessesRouter } from './routes/businesses.js';
 import { servicesRouter } from './routes/services.js';
 import { staffRouter } from './routes/staff.js';
 import { availabilityRouter } from './routes/availability.js';
+import { appointmentsRouter } from './routes/appointments.js';
 
 export const app = express();
 
@@ -38,6 +39,7 @@ app.use('/api/businesses', businessesRouter);
 app.use('/api', servicesRouter);
 app.use('/api', staffRouter);
 app.use('/api', availabilityRouter);
+app.use('/api/appointments', appointmentsRouter);
 
 // No route matched.
 app.use((req, res) => {
