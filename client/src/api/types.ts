@@ -77,3 +77,42 @@ export type Appointment = {
   staff: { id: number; name: string }
   customer: { id: number; name: string; email: string }
 }
+
+// ---- Owner setup (GET /api/businesses/mine) ----
+
+export type TimeRange = {
+  weekday: number // 0 = Sunday ... 6 = Saturday
+  startTime: string // "HH:MM"
+  endTime: string
+}
+
+export type Schedule = {
+  hours: TimeRange[]
+  breaks: TimeRange[]
+}
+
+export type OwnerService = ServiceSummary & { active: boolean }
+
+export type OwnerStaff = Schedule & {
+  id: number
+  name: string
+  active: boolean
+  serviceIds: number[]
+}
+
+export type BusinessProfile = {
+  name: string
+  categoryId: number
+  location: string
+  address: string
+  phone: string
+  email: string
+}
+
+export type OwnerBusiness = BusinessProfile &
+  Schedule & {
+    id: number
+    category: Category
+    services: OwnerService[]
+    staff: OwnerStaff[]
+  }
