@@ -46,3 +46,8 @@ export function todayInBusinessTime() {
   // The en-CA locale writes dates as YYYY-MM-DD.
   return new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE }).format(new Date())
 }
+
+// "YYYY-MM-DD" of a moment, in business time.
+export function dateInBusinessTime(iso: string) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE }).format(new Date(iso))
+}
