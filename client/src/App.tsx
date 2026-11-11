@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router'
 import Layout from './components/Layout'
+import RequireAuth from './components/RequireAuth'
 import SearchPage from './pages/SearchPage'
 import BusinessPage from './pages/BusinessPage'
 import LoginPage from './pages/LoginPage'
@@ -15,13 +16,40 @@ export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
+        {/* Public */}
         <Route index element={<SearchPage />} />
         <Route path="businesses/:id" element={<BusinessPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="signup" element={<SignupPage />} />
-        <Route path="appointments" element={<MyAppointmentsPage />} />
-        <Route path="owner" element={<OwnerDashboardPage />} />
-        <Route path="owner/setup" element={<OwnerSetupPage />} />
+
+        {/* Customers only */}
+        <Route
+          path="appointments"
+          element={
+            <RequireAuth role="CUSTOMER">
+              <MyAppointmentsPage />
+            </RequireAuth>
+          }
+        />
+
+        {/* Business owners only */}
+        <Route
+          path="owner"
+          element={
+            <RequireAuth role="OWNER">
+              <OwnerDashboardPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="owner/setup"
+          element={
+            <RequireAuth role="OWNER">
+              <OwnerSetupPage />
+            </RequireAuth>
+          }
+        />
+
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

@@ -1,5 +1,6 @@
-import { NavLink, Outlet } from 'react-router'
+import { NavLink, Outlet, useNavigate } from 'react-router'
 import Logo from './Logo'
+import { useAuth } from '../auth/useAuth'
 
 // Header link: tangerine underline marks the page you are on.
 function navClass({ isActive }: { isActive: boolean }) {
@@ -7,6 +8,70 @@ function navClass({ isActive }: { isActive: boolean }) {
     'rounded-sm py-1 text-sm font-medium transition-colors duration-200',
     isActive ? 'text-white border-b-2 border-accent' : 'text-white/80 hover:text-white',
   ].join(' ')
+}
+
+// Different links for visitors, customers and business owners.
+function NavLinks() {
+  const { user, checking, logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    navigate('/')
+  }
+
+  if (checking) return null
+
+  if (!user) {
+    return (
+      <>
+        <NavLink to="/" end className={navClass}>
+          Find a business
+        </NavLink>
+        <NavLink to="/login" className={navClass}>
+          Log in
+        </NavLink>
+        <NavLink
+          to="/signup"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-dark"
+        >
+          Sign up
+        </NavLink>
+      </>
+    )
+  }
+
+  return (
+    <>
+      {user.role === 'CUSTOMER' ? (
+        <>
+          <NavLink to="/" end className={navClass}>
+            Find a business
+          </NavLink>
+          <NavLink to="/appointments" className={navClass}>
+            My appointments
+          </NavLink>
+        </>
+      ) : (
+        <>
+          <NavLink to="/owner" end className={navClass}>
+            Appointments
+          </NavLink>
+          <NavLink to="/owner/setup" className={navClass}>
+            Business setup
+          </NavLink>
+        </>
+      )}
+      <span className="hidden text-sm text-white/80 sm:inline">Hi, {user.name}</span>
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="rounded-lg border border-white/40 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:border-accent hover:text-accent"
+      >
+        Log out
+      </button>
+    </>
+  )
 }
 
 // The frame around every page: header, the current page (<Outlet />), footer.
@@ -19,19 +84,8 @@ export default function Layout() {
           className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-4"
         >
           <Logo />
-          <div className="flex flex-wrap items-center gap-6">
-            <NavLink to="/" end className={navClass}>
-              Find a business
-            </NavLink>
-            <NavLink to="/login" className={navClass}>
-              Log in
-            </NavLink>
-            <NavLink
-              to="/signup"
-              className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-dark"
-            >
-              Sign up
-            </NavLink>
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <NavLinks />
           </div>
         </nav>
       </header>

@@ -159,3 +159,4 @@ Each step is one commit. Milestones are marked with git tags.
 9. Email notifications with Resend
 10. Back-end test: overlapping bookings are rejected — **milestone-2**
 11. Front-end scaffold: Vite, React, TypeScript, Tailwind, routing
+12. Front-end auth: API client, login and signup pages, protected pages
