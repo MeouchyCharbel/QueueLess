@@ -19,9 +19,25 @@ QueueLess/
 └── docs/     # Wireframes and database schema
 ```
 
+## Running the API locally
+
+Requires Node.js 20+ and a PostgreSQL database (we use a free Neon project).
+
+```bash
+cd server
+npm install
+cp .env.example .env        # then fill in the real values
+npm run db:migrate          # creates the tables
+npm run db:seed             # adds the business categories
+npm run dev                 # http://localhost:3000/api/health
+```
+
+Design documents: [wireframes](docs/wireframes.md) and [database schema](docs/schema.md).
+
 ## Build steps
 
 Each step is one commit. Milestones are marked with git tags.
 
 1. Repository setup
 2. Express server scaffold
+3. Database schema, migration and seed — **milestone-1**

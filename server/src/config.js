@@ -3,7 +3,7 @@
 // not cause a confusing error later in the middle of a request.
 import 'dotenv/config';
 
-const REQUIRED_VARS = ['CLIENT_ORIGIN'];
+const REQUIRED_VARS = ['DATABASE_URL', 'CLIENT_ORIGIN'];
 
 for (const key of REQUIRED_VARS) {
   if (!process.env[key]) {

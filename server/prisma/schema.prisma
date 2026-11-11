@@ -1,0 +1,145 @@
+// QueueLess database schema (PostgreSQL on Neon, accessed through Prisma).
+// Follows the schema sketch in the approved proposal.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  OWNER
+}
+
+enum AppointmentStatus {
+  PENDING // booked by the customer, waiting for the owner
+  CONFIRMED // accepted by the owner
+  CANCELLED // cancelled by either side (frees the time slot)
+  COMPLETED // the appointment took place
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  passwordHash String // bcrypt hash — the plain password is never stored
+  role         Role
+  createdAt    DateTime      @default(now())
+  businesses   Business[] // businesses this user owns (owners only)
+  appointments Appointment[] // appointments this user booked (customers only)
+}
+
+model Category {
+  id         Int        @id @default(autoincrement())
+  name       String     @unique
+  businesses Business[]
+}
+
+model Business {
+  id           Int            @id @default(autoincrement())
+  ownerId      Int
+  categoryId   Int
+  name         String
+  location     String // city or area, used by the location search filter
+  address      String
+  phone        String
+  email        String
+  createdAt    DateTime       @default(now())
+  owner        User           @relation(fields: [ownerId], references: [id])
+  category     Category       @relation(fields: [categoryId], references: [id])
+  services     Service[]
+  staff        Staff[]
+  workingHours WorkingHours[]
+  breaks       Break[]
+  appointments Appointment[]
+
+  @@index([categoryId])
+  @@index([location])
+}
+
+model Service {
+  id              Int            @id @default(autoincrement())
+  businessId      Int
+  name            String
+  price           Decimal        @db.Decimal(10, 2)
+  durationMinutes Int
+  active          Boolean        @default(true) // inactive = hidden from booking, kept for history
+  business        Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staffServices   StaffService[]
+  appointments    Appointment[]
+}
+
+model Staff {
+  id            Int            @id @default(autoincrement())
+  businessId    Int
+  name          String
+  active        Boolean        @default(true)
+  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staffServices StaffService[]
+  workingHours  WorkingHours[]
+  breaks        Break[]
+  appointments  Appointment[]
+}
+
+// Which staff member can perform which service (many-to-many).
+model StaffService {
+  staffId   Int
+  serviceId Int
+  staff     Staff   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([staffId, serviceId])
+}
+
+// Opening hours for one weekday. Belongs to the whole business (businessId)
+// or overrides it for one staff member (staffId).
+// weekday: 0 = Sunday ... 6 = Saturday. Times are "HH:MM" in business time.
+model WorkingHours {
+  id         Int       @id @default(autoincrement())
+  businessId Int?
+  staffId    Int?
+  weekday    Int
+  startTime  String
+  endTime    String
+  business   Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staff      Staff?    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+}
+
+// A break inside the working hours (for example lunch), same shape as above.
+model Break {
+  id         Int       @id @default(autoincrement())
+  businessId Int?
+  staffId    Int?
+  weekday    Int
+  startTime  String
+  endTime    String
+  business   Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staff      Staff?    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+}
+
+// Overlapping active appointments for the same staff member are blocked by a
+// PostgreSQL exclusion constraint added in the migration SQL (Prisma cannot
+// express it), so two customers booking at the same moment cannot both win.
+model Appointment {
+  id         Int               @id @default(autoincrement())
+  customerId Int
+  businessId Int
+  serviceId  Int
+  staffId    Int
+  status     AppointmentStatus @default(PENDING)
+  startAt    DateTime          @db.Timestamptz(3)
+  endAt      DateTime          @db.Timestamptz(3)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  customer   User              @relation(fields: [customerId], references: [id])
+  business   Business          @relation(fields: [businessId], references: [id])
+  service    Service           @relation(fields: [serviceId], references: [id])
+  staff      Staff             @relation(fields: [staffId], references: [id])
+
+  @@index([customerId])
+  @@index([businessId, startAt])
+}
