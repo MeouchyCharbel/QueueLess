@@ -46,6 +46,8 @@ All bodies are JSON. 🔒 = needs `Authorization: Bearer <token>`;
 | POST | `/api/auth/login` | public | 200 `{ token, user }` | 400, 401, 429 |
 | GET | `/api/auth/me` | 🔒 | 200 user | 401 |
 | GET | `/api/categories` | public | 200 list | — |
+| GET | `/api/businesses?categoryId=&location=` | public | 200 list (bookable businesses only) | 400 |
+| GET | `/api/businesses/:id` | public | 200 business + active services and staff | 404 |
 | POST | `/api/businesses` | owner | 201 business | 400, 403, 409 |
 | GET | `/api/businesses/mine` | owner | 200 business + services, staff, hours | 404 |
 | PATCH | `/api/businesses/:id` | owner | 200 business | 400, 404 |
@@ -85,3 +87,4 @@ Each step is one commit. Milestones are marked with git tags.
 3. Database schema, migration and seed — **milestone-1**
 4. Authentication: signup, login, JWT, role checks
 5. Business setup API: profile, working hours, services, staff
+6. Business search API: category and location filters

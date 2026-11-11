@@ -1,5 +1,5 @@
 // Businesses, mounted at /api/businesses.
-// This file holds the owner's setup routes (profile and working hours).
+// Owner setup routes (profile and working hours) and public search/detail.
 import express from 'express';
 import { z } from 'zod';
 import { prisma } from '../db.js';
@@ -9,6 +9,7 @@ import { requireRole } from '../middleware/requireRole.js';
 import { findOwnedBusiness } from '../lib/ownership.js';
 import { ScheduleInput, saveSchedule, loadSchedule } from '../lib/schedule.js';
 import { serializeService } from '../lib/serialize.js';
+import { parseId } from '../lib/ids.js';
 
 export const businessesRouter = express.Router();
 
@@ -95,4 +96,80 @@ businessesRouter.put('/:id/hours', ...ownerOnly, validate(ScheduleInput), async 
   }
   await saveSchedule({ businessId: business.id }, req.body);
   res.json(await loadSchedule({ businessId: business.id }));
+});
+
+// ---------------------------------------------------------------------------
+// Public routes: anyone can search and view businesses (no login needed).
+// They are defined after /mine so "/mine" is never read as an :id.
+// ---------------------------------------------------------------------------
+
+const SearchQuery = z.object({
+  categoryId: z.coerce.number().int().positive().optional(),
+  location: z.string().trim().max(80).optional(),
+});
+
+// Only businesses a customer can actually book: at least one active
+// service and at least one active staff member.
+const BOOKABLE = {
+  services: { some: { active: true } },
+  staff: { some: { active: true } },
+};
+
+// GET /api/businesses?categoryId=1&location=beirut -> 200 list | 400
+// Both filters are optional. Location matches part of the city/area,
+// ignoring upper/lower case.
+businessesRouter.get('/', async (req, res) => {
+  const result = SearchQuery.safeParse(req.query);
+  if (!result.success) {
+    return res.status(400).json({ error: 'Invalid search filters' });
+  }
+  const { categoryId, location } = result.data;
+
+  const businesses = await prisma.business.findMany({
+    where: {
+      ...BOOKABLE,
+      ...(categoryId && { categoryId }),
+      ...(location && { location: { contains: location, mode: 'insensitive' } }),
+    },
+    select: { id: true, name: true, location: true, address: true, category: true },
+    orderBy: { name: 'asc' },
+    take: 50,
+  });
+  res.json(businesses);
+});
+
+// GET /api/businesses/:id -> 200 business with active services and staff | 404
+// Everything the booking page needs to show its choices.
+businessesRouter.get('/:id', async (req, res) => {
+  const id = parseId(req.params.id);
+  const business = id
+    ? await prisma.business.findUnique({
+        where: { id },
+        include: {
+          category: true,
+          services: { where: { active: true }, orderBy: { name: 'asc' } },
+          staff: {
+            where: { active: true },
+            orderBy: { name: 'asc' },
+            include: { staffServices: { where: { service: { active: true } } } },
+          },
+        },
+      })
+    : null;
+  if (!business) {
+    return res.status(404).json({ error: 'Business not found' });
+  }
+
+  const { ownerId, createdAt, services, staff, ...profile } = business;
+  res.json({
+    ...profile,
+    services: services.map(({ id, name, price, durationMinutes }) =>
+      serializeService({ id, name, price, durationMinutes }),
+    ),
+    staff: staff.map(({ id, name, staffServices }) => ({
+      id,
+      name,
+      serviceIds: staffServices.map((s) => s.serviceId),
+    })),
+  });
 });
