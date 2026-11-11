@@ -13,6 +13,7 @@ import { HttpError } from '../lib/httpError.js';
 import { getAvailableSlots } from '../lib/availability.js';
 import { isValidDate, localDateOf, zonedDateTime } from '../lib/time.js';
 import { serializeService } from '../lib/serialize.js';
+import { notifyBooked, notifyCancelled, notifyRescheduled } from '../lib/notifications.js';
 
 export const appointmentsRouter = express.Router();
 
@@ -32,7 +33,7 @@ const ALLOWED_CHANGES = {
 
 // What every appointment response contains.
 const DETAILS = {
-  business: { select: { id: true, name: true, location: true, address: true, phone: true } },
+  business: { select: { id: true, name: true, location: true, address: true, phone: true, email: true } },
   service: { select: { id: true, name: true, price: true, durationMinutes: true } },
   staff: { select: { id: true, name: true } },
   customer: { select: { id: true, name: true, email: true } },
@@ -102,6 +103,9 @@ appointmentsRouter.post('/', requireRole('CUSTOMER'), validate(BookingInput), as
       include: DETAILS,
     });
     res.status(201).json(toResponse(appointment));
+    // Emails go out after the response, so a slow email never delays the
+    // customer (sendEmail logs failures instead of throwing).
+    notifyBooked(appointment);
   } catch (err) {
     // Someone else booked this staff member at the same moment.
     if (isOverlapError(err)) {
@@ -177,6 +181,14 @@ appointmentsRouter.patch('/:id', validate(ChangeInput), async (req, res) => {
       include: DETAILS,
     });
     res.json(toResponse(updated));
+
+    // Email both sides about cancellations and new times (confirming or
+    // completing does not send an email).
+    if (data.status === 'CANCELLED') {
+      notifyCancelled(updated, req.userRole);
+    } else if (data.startAt) {
+      notifyRescheduled(updated, appointment.startAt);
+    }
   } catch (err) {
     if (isOverlapError(err)) {
       throw new HttpError(409, 'This time was just booked by someone else. Please pick another one.');

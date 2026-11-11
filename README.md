@@ -86,6 +86,17 @@ Example bodies:
 { "startAt": "2026-11-21T08:00:00.000Z" }   // reschedule
 ```
 
+### Email notifications (Resend)
+
+Booking, cancelling and rescheduling an appointment sends a plain-text email
+to the customer and to the business's contact email, through the
+[Resend](https://resend.com) API (`server/src/lib/notifications.js`). Emails
+are sent after the response, and a failed email is logged without failing
+the booking. Without `RESEND_API_KEY` the server prints the emails to the
+terminal instead. With the default sender `onboarding@resend.dev`, Resend
+only delivers to the address that owns the Resend account; a verified domain
+removes that limit.
+
 Appointment status flow: a booking starts as `PENDING`; the owner confirms it
 (`CONFIRMED`) and later marks it `COMPLETED`; either side can cancel an active
 appointment (customers only before it starts). When a customer reschedules,
@@ -116,3 +127,4 @@ Each step is one commit. Milestones are marked with git tags.
 6. Business search API: category and location filters
 7. Availability engine: free time slots
 8. Appointments API: book, list, confirm, cancel, complete, reschedule
+9. Email notifications with Resend

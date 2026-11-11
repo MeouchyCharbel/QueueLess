@@ -18,4 +18,7 @@ export const config = {
   // Business hours ("09:00") are read in this timezone. Beirut by default;
   // it also handles the summer/winter clock change automatically.
   timezone: process.env.APP_TIMEZONE || 'Asia/Beirut',
+  // Email is optional: without a key, emails are printed to the terminal.
+  resendApiKey: process.env.RESEND_API_KEY,
+  emailFrom: process.env.EMAIL_FROM || 'QueueLess <onboarding@resend.dev>',
 };
