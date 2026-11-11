@@ -32,6 +32,19 @@ npm run db:seed             # adds the business categories
 npm run dev                 # http://localhost:3000/api/health
 ```
 
+### Back-end tests
+
+```bash
+cd server
+npm test          # Vitest + Supertest
+```
+
+`server/tests/appointments.test.js` checks that the API rejects overlapping
+bookings for the same staff member, allows back-to-back bookings, and lets only
+one of two simultaneous bookings win. It runs against the database in
+`DATABASE_URL`, creates its own test data, deletes it afterwards, and never
+sends real emails.
+
 Design documents: [wireframes](docs/wireframes.md) and [database schema](docs/schema.md).
 
 ## API routes
@@ -128,3 +141,4 @@ Each step is one commit. Milestones are marked with git tags.
 7. Availability engine: free time slots
 8. Appointments API: book, list, confirm, cancel, complete, reschedule
 9. Email notifications with Resend
+10. Back-end test: overlapping bookings are rejected — **milestone-2**

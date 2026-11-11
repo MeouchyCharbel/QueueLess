@@ -6,7 +6,9 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "node prisma/seed.js"
+    "db:seed": "node prisma/seed.js",
+    "test": "vitest run",
+    "postinstall": "prisma generate"
   },
   "type": "module",
   "dependencies": {
@@ -22,6 +24,8 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "prisma": "^6.19.3"
+    "prisma": "^6.19.3",
+    "supertest": "^7.3.2",
+    "vitest": "^5.1.0"
   }
 }
