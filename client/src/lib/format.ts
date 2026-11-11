@@ -22,3 +22,27 @@ export function formatDuration(minutes: number) {
   if (hours === 0) return `${rest} min`
   return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`
 }
+
+// "09:30" — the time of a moment, in business time.
+export function formatTime(iso: string) {
+  return new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit' }).format(
+    new Date(iso),
+  )
+}
+
+// "Fri 20 Nov 2026" — the date of a moment, in business time.
+export function formatDate(iso: string) {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: TIMEZONE,
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(iso))
+}
+
+// Today's date as "YYYY-MM-DD" in business time (the value an <input type="date"> uses).
+export function todayInBusinessTime() {
+  // The en-CA locale writes dates as YYYY-MM-DD.
+  return new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE }).format(new Date())
+}

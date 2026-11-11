@@ -49,3 +49,31 @@ export type BusinessDetail = BusinessSummary & {
   services: ServiceSummary[]
   staff: StaffSummary[]
 }
+
+// One free time from GET /api/businesses/:id/availability
+export type Slot = {
+  startAt: string // ISO date-time
+  endAt: string
+}
+
+export type Availability = {
+  date: string
+  timezone: string
+  slots: Slot[]
+}
+
+export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED'
+
+// An appointment as the API returns it (POST/GET/PATCH /api/appointments)
+export type Appointment = {
+  id: number
+  status: AppointmentStatus
+  startAt: string
+  endAt: string
+  createdAt: string
+  updatedAt: string
+  business: { id: number; name: string; location: string; address: string; phone: string; email: string }
+  service: ServiceSummary
+  staff: { id: number; name: string }
+  customer: { id: number; name: string; email: string }
+}

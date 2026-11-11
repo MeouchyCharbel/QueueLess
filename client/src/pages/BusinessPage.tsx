@@ -2,10 +2,11 @@ import { Link, useParams } from 'react-router'
 import { EmptyState, ErrorState, LoadingState } from '../components/LoadStates'
 import { useApi } from '../hooks/useApi'
 import { ApiError } from '../api/client'
-import { formatDuration, formatPrice } from '../lib/format'
+import BookingForm from '../components/BookingForm'
 import type { BusinessDetail } from '../api/types'
 
-// Public business page: profile, services and team.
+// Public business page: profile, the booking form (services, staff, date,
+// free times) and the team.
 export default function BusinessPage() {
   const { id } = useParams()
   const { data: business, error, loading, reload } = useApi<BusinessDetail>(`/api/businesses/${id}`)
@@ -48,24 +49,14 @@ export default function BusinessPage() {
       </header>
 
       <div className="grid gap-8 md:grid-cols-[2fr_1fr]">
-        <section aria-labelledby="services-title" className="rounded-lg border border-line bg-card p-6">
-          <h2 id="services-title" className="text-xl">
-            Services
+        <section aria-labelledby="booking-title" className="rounded-lg border border-line bg-card p-6">
+          <h2 id="booking-title" className="mb-6 text-xl">
+            Book an appointment
           </h2>
-          <ul className="mt-4 divide-y divide-line">
-            {business.services.map((service) => (
-              <li key={service.id} className="flex items-center justify-between gap-4 py-4">
-                <div>
-                  <p className="font-medium">{service.name}</p>
-                  <p className="text-sm text-muted">{formatDuration(service.durationMinutes)}</p>
-                </div>
-                <p className="font-semibold">{formatPrice(service.price)}</p>
-              </li>
-            ))}
-          </ul>
+          <BookingForm business={business} />
         </section>
 
-        <section aria-labelledby="team-title" className="rounded-lg border border-line bg-card p-6">
+        <section aria-labelledby="team-title" className="h-fit rounded-lg border border-line bg-card p-6">
           <h2 id="team-title" className="text-xl">
             Team
           </h2>

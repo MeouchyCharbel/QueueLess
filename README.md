@@ -161,3 +161,4 @@ Each step is one commit. Milestones are marked with git tags.
 11. Front-end scaffold: Vite, React, TypeScript, Tailwind, routing
 12. Front-end auth: API client, login and signup pages, protected pages
 13. Search page and business page
+14. Booking flow: service, staff member, date, free time
