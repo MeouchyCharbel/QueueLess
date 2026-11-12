@@ -1,12 +1,13 @@
 import { NavLink, Outlet, useNavigate } from 'react-router'
+import AccountMenu from './AccountMenu'
 import Logo from './Logo'
 import { useAuth } from '../auth/useAuth'
 
-// Header link: tangerine underline marks the page you are on.
+// Header link: a forest green underline marks the page you are on.
 function navClass({ isActive }: { isActive: boolean }) {
   return [
-    'rounded-sm py-1 text-sm font-medium transition-colors duration-200',
-    isActive ? 'text-white border-b-2 border-accent' : 'text-white/80 hover:text-white',
+    'border-b-2 py-2 text-[15px] font-semibold transition-colors duration-200',
+    isActive ? 'border-brand text-ink' : 'border-transparent text-muted hover:text-ink',
   ].join(' ')
 }
 
@@ -33,7 +34,7 @@ function NavLinks() {
         </NavLink>
         <NavLink
           to="/signup"
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-dark"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-dark"
         >
           Sign up
         </NavLink>
@@ -62,42 +63,35 @@ function NavLinks() {
           </NavLink>
         </>
       )}
-      <span className="hidden text-sm text-white/80 sm:inline">Hi, {user.name}</span>
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="rounded-lg border border-white/40 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:border-accent hover:text-accent"
-      >
-        Log out
-      </button>
+      <AccountMenu user={user} onLogout={handleLogout} />
     </>
   )
 }
 
+const CONTAINER = 'mx-auto w-full max-w-[1440px] px-4 sm:px-8 lg:px-16'
+
 // The frame around every page: header, the current page (<Outlet />), footer.
 export default function Layout() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="bg-ink">
+    <div className="flex min-h-screen flex-col overflow-x-clip">
+      <header className="border-b border-line bg-card">
         <nav
           aria-label="Main"
-          className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-4"
+          className={`${CONTAINER} flex min-h-[72px] flex-wrap items-center justify-between gap-x-8 gap-y-2 py-2`}
         >
           <Logo />
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sm:gap-x-8">
             <NavLinks />
           </div>
         </nav>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+      <main className={`${CONTAINER} flex-1 py-8 sm:py-12`}>
         <Outlet />
       </main>
 
       <footer className="border-t border-line bg-card">
-        <p className="mx-auto max-w-5xl px-4 py-6 text-sm text-muted">
-          QueueLess · Book appointments without the phone calls.
-        </p>
+        <p className={`${CONTAINER} py-6 text-center text-sm text-muted`}>QueueLess · Book appointments without the phone calls.</p>
       </footer>
     </div>
   )

@@ -70,7 +70,7 @@ export default function SlotPicker({
                   aria-pressed={selected}
                   onClick={() => onChange(slot.startAt)}
                   className={[
-                    'min-h-11 rounded-lg border px-2 py-2 text-sm font-semibold transition-colors duration-200',
+                    'min-h-11 rounded-md border px-2 py-2 text-sm font-semibold transition-colors duration-200',
                     selected
                       ? 'border-brand bg-brand text-white'
                       : 'border-line bg-card text-ink hover:border-brand hover:text-brand',

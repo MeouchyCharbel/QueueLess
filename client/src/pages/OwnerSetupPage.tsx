@@ -80,7 +80,7 @@ export default function OwnerSetupPage() {
   if (error || !business) return <ErrorState error={error ?? new Error('Something went wrong')} onRetry={reload} />
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl">
       <PageHeader title="Business setup" subtitle={business.name} />
       <Checklist business={business} />
 

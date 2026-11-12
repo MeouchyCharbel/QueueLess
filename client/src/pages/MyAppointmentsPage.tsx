@@ -27,7 +27,7 @@ export default function MyAppointmentsPage() {
   const history = (data ?? []).filter((a) => !isUpcoming(a)).reverse() // most recent first
 
   return (
-    <div>
+    <div className="mx-auto max-w-4xl">
       <PageHeader title="My appointments" subtitle="View, cancel or reschedule your bookings." />
 
       {message && (

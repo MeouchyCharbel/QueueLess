@@ -217,6 +217,9 @@ async function checkReschedule(role, appointment, startAt) {
   if (!ACTIVE.includes(appointment.status)) {
     throw new HttpError(409, `A ${appointment.status.toLowerCase()} appointment cannot be rescheduled`);
   }
+  if (role === 'CUSTOMER' && appointment.startAt <= new Date()) {
+    throw new HttpError(409, 'Past appointments cannot be rescheduled');
+  }
   const slot = await findFreeSlot({
     businessId: appointment.businessId,
     serviceId: appointment.serviceId,

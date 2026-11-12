@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { apiFetch } from '../api/client'
 
 // Loads data from one API path and tracks the three states every page needs:
@@ -9,15 +9,26 @@ export function useApi<T>(path: string | null) {
   const [error, setError] = useState<Error | null>(null)
   const [loading, setLoading] = useState(path !== null)
 
+  // Every request gets a number. When answers arrive out of order (the user
+  // changes a filter twice quickly), only the newest request may update the
+  // page, so an old, slower answer can never overwrite newer results.
+  const latestRequest = useRef(0)
+
   // useCallback keeps the same function between renders, so the effect
   // below only runs again when the path changes (no endless requests).
   const load = useCallback(() => {
     if (path === null) return
+    const requestNumber = ++latestRequest.current
+    const isLatest = () => requestNumber === latestRequest.current
+
     setLoading(true)
     setError(null)
     apiFetch<T>(path)
-      .then(setData, setError)
-      .finally(() => setLoading(false))
+      .then(
+        (result) => isLatest() && setData(result),
+        (err: Error) => isLatest() && setError(err),
+      )
+      .finally(() => isLatest() && setLoading(false))
   }, [path])
 
   // Fetching is a side effect, so it belongs in useEffect. load() sets the

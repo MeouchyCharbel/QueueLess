@@ -17,7 +17,7 @@ export default function Button({ variant = 'primary', className = '', ...props }
     <button
       {...props}
       className={[
-        'inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold',
+        'inline-flex min-h-11 items-center justify-center rounded-md px-4 py-2 text-sm font-semibold',
         'transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60',
         VARIANTS[variant],
         className,

@@ -99,7 +99,7 @@ export default function HoursForm({ initial, endpoint, note, onSaved }: HoursFor
     }
   }
 
-  const timeClass = 'min-h-11 rounded-lg border border-line bg-card px-2 py-2 disabled:opacity-60'
+  const timeClass = 'min-h-11 rounded-md border border-line bg-card px-2 py-2 disabled:opacity-60'
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">

@@ -108,16 +108,17 @@ const SearchQuery = z.object({
   location: z.string().trim().max(80).optional(),
 });
 
-// Only businesses a customer can actually book: at least one active
-// service and at least one active staff member.
+// Only businesses a customer can actually book: at least one active staff
+// member who performs at least one active service.
 const BOOKABLE = {
-  services: { some: { active: true } },
-  staff: { some: { active: true } },
+  staff: {
+    some: { active: true, staffServices: { some: { service: { active: true } } } },
+  },
 };
 
 // GET /api/businesses?categoryId=1&location=beirut -> 200 list | 400
-// Both filters are optional. Location matches part of the city/area,
-// ignoring upper/lower case.
+// Both filters are optional. Location matches part of the city/area or of
+// the address ("old souk" finds "Old Souk 3"), ignoring upper/lower case.
 businessesRouter.get('/', async (req, res) => {
   const result = SearchQuery.safeParse(req.query);
   if (!result.success) {
@@ -129,7 +130,13 @@ businessesRouter.get('/', async (req, res) => {
     where: {
       ...BOOKABLE,
       ...(categoryId && { categoryId }),
-      ...(location && { location: { contains: location, mode: 'insensitive' } }),
+      // The location text can match the city/area or the street address.
+      ...(location && {
+        OR: [
+          { location: { contains: location, mode: 'insensitive' } },
+          { address: { contains: location, mode: 'insensitive' } },
+        ],
+      }),
     },
     select: { id: true, name: true, location: true, address: true, category: true },
     orderBy: { name: 'asc' },

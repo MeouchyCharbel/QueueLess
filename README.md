@@ -138,10 +138,12 @@ offers staff who perform the chosen service, keeps "Confirm booking" disabled
 until a free time is picked, sends the right booking to the API, and shows the
 error when the time was just taken (409). The API is replaced by a fake.
 
-Colors come from the brand palette and are defined once, as role-named
-tokens, in `client/src/index.css`: Charcoal Black `#21232E` (text, header),
-Royal Blue `#105BFF` (links, buttons) and Tangerine Orange `#FE8900`
-(accents only, since it is too light for text on white).
+The design ("Forest Green & Sand") is defined once, as role-named tokens, in
+`client/src/index.css`: forest green `#203D30` (buttons, links), warm ivory
+`#F7F4EF` (background), sand gold `#B79A6B` and copper `#A47A3D` (icons and
+accents only, too light for body text), text `#202824` / `#626A66`, borders
+`#E7E2DA`. Headings use Georgia, everything else Inter (bundled with the site).
+Businesses show a generic photo for their category (`client/public/images/`).
 
 Design documents: [wireframes](docs/wireframes.md) and [database schema](docs/schema.md).
 
@@ -157,7 +159,7 @@ All bodies are JSON. 🔒 = needs `Authorization: Bearer <token>`;
 | POST | `/api/auth/login` | public | 200 `{ token, user }` | 400, 401, 429 |
 | GET | `/api/auth/me` | 🔒 | 200 user | 401 |
 | GET | `/api/categories` | public | 200 list | — |
-| GET | `/api/businesses?categoryId=&location=` | public | 200 list (bookable businesses only) | 400 |
+| GET | `/api/businesses?categoryId=&location=` | public | 200 list (bookable businesses only; location matches city or address) | 400 |
 | GET | `/api/businesses/:id` | public | 200 business + active services and staff | 404 |
 | GET | `/api/businesses/:id/availability?serviceId=&staffId=&date=YYYY-MM-DD` | public | 200 `{ date, timezone, slots }` | 400, 404 |
 | POST | `/api/appointments` | customer | 201 appointment (PENDING) | 400, 403, 404, 409 |

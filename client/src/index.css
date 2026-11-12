@@ -1,56 +1,73 @@
 @import "tailwindcss";
+/* Inter is bundled with the site (no request to an external font server). */
+@import "@fontsource-variable/inter";
 
 /*
-  QueueLess design tokens. Tailwind turns each --color-* below into classes
-  (bg-brand, text-ink, border-line, ...) and also exposes it as a CSS variable
-  on :root. Colors are named by their ROLE, not their hue. No raw hex codes
-  are used anywhere else in the app.
+  QueueLess design tokens ("Forest Green & Sand"). Tailwind turns each token
+  into classes (bg-brand, text-ink, border-line, rounded-lg, shadow-card, ...)
+  and also exposes it as a CSS variable on :root. Colors are named by ROLE,
+  not hue, and no raw hex codes are used anywhere else in the app.
 
-  Brand colors (from the proposal):
-    Charcoal Black  #21232E -> ink     (text, header background)
-    Royal Blue      #105BFF -> brand   (links, primary buttons)
-    Tangerine Orange #FE8900 -> accent (highlights only)
+    brand       #203D30 forest green   buttons, links, active states
+    brand-dark  #193126 dark green     hover state of brand buttons
+    surface     #F7F4EF warm ivory     page background
+    card        #FFFFFF white          cards, navbar
+    brand-soft  #F2EEE8 beige          subtle surfaces
+    accent      #B79A6B sand gold      decoration and badges only
+    copper      #A47A3D copper gold    icons and the large hero accent
+    ink         #202824                primary text
+    muted       #626A66                secondary text
+    line        #E7E2DA                borders
 
-  Contrast (body text needs at least 4.5:1):
-    ink on white 15.6:1 · brand on white 5.3:1 · white on brand 5.3:1
-    ink on accent 6.5:1 · accent on ink 6.5:1
-    accent on white is only 2.4:1, so accent is NEVER used for text on a
-    light background.
+  Contrast (body text needs 4.5:1, large text 3:1), measured on ivory:
+    ink 13.8:1 · muted 5.1:1 · brand 10.8:1 · white on brand 11.9:1
+    copper 3.5:1 -> only for large headline text and icons
+    accent 2.4:1 -> never used for text on a light background
 
-  Spacing: only Tailwind steps 1, 2, 4, 6, 8, 12, 16
-  (= 4, 8, 16, 24, 32, 48, 64 px), the spacing scale from the course.
+  Spacing uses Tailwind steps of 4px (4, 8, 16, 24, 32, 48, 64 px).
 */
 @theme {
-  --color-ink: #21232e;
-  --color-brand: #105bff;
-  --color-brand-dark: #0b45c7; /* hover state for brand buttons */
-  --color-brand-soft: #eaf1ff;
-  --color-accent: #fe8900;
+  --color-ink: #202824;
+  --color-brand: #203d30;
+  --color-brand-dark: #193126;
+  --color-brand-soft: #f2eee8;
+  --color-accent: #b79a6b;
+  --color-copper: #a47a3d;
 
-  --color-surface: #f6f7fb; /* page background */
+  --color-surface: #f7f4ef;
   --color-card: #ffffff;
-  --color-muted: #5b5f70; /* secondary text, 6.3:1 on white */
-  --color-line: #e3e5ec; /* borders */
+  --color-muted: #626a66;
+  --color-line: #e7e2da;
 
   --color-success: #12703a;
   --color-success-soft: #eaf7ef;
   --color-danger: #b42318;
   --color-danger-soft: #fef0ee;
 
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+
+  /* rounded-md = buttons and inputs, rounded-lg = cards, rounded-2xl = search panel */
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  --shadow-card: 0 2px 8px rgba(25, 49, 38, 0.04);
+  --shadow-panel: 0 12px 32px rgba(25, 49, 38, 0.08);
 }
 
 @layer base {
   body {
     @apply bg-surface text-ink font-sans antialiased;
-    line-height: 1.5;
+    font-size: 16px;
+    line-height: 1.55;
   }
 
+  /* Editorial headings in Georgia. */
   h1,
   h2,
   h3 {
-    line-height: 1.2;
-    @apply font-semibold;
+    @apply font-serif font-bold;
+    line-height: 1.15;
   }
 
   /* Visible keyboard focus everywhere (accessibility). */

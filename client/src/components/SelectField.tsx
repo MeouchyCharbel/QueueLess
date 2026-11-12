@@ -21,7 +21,7 @@ export default function SelectField({ label, error, className = '', children, ..
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         className={[
-          'block min-h-11 w-full rounded-lg border bg-card px-4 py-2 text-ink',
+          'block min-h-11 w-full rounded-md border bg-card px-4 py-2 text-ink',
           'transition-colors duration-200 focus:border-brand',
           error ? 'border-danger' : 'border-line',
         ].join(' ')}
