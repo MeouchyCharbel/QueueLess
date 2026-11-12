@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import AccountMenu from './AccountMenu'
 import Logo from './Logo'
+import MobileMenu from './MobileMenu'
 import { useAuth } from '../auth/useAuth'
 
 // Header link: a forest green underline marks the page you are on.
@@ -68,25 +69,27 @@ function NavLinks() {
   )
 }
 
-const CONTAINER = 'mx-auto w-full max-w-[1440px] px-4 sm:px-8 lg:px-16'
+const CONTAINER = 'mx-auto w-full max-w-[1440px] px-4 md:px-8 lg:px-16'
 
 // The frame around every page: header, the current page (<Outlet />), footer.
 export default function Layout() {
   return (
     <div className="flex min-h-screen flex-col overflow-x-clip">
-      <header className="border-b border-line bg-card">
+      <header className="relative border-b border-line bg-card">
         <nav
           aria-label="Main"
-          className={`${CONTAINER} flex min-h-[72px] flex-wrap items-center justify-between gap-x-8 gap-y-2 py-2`}
+          className={`${CONTAINER} flex min-h-16 flex-wrap items-center justify-between gap-x-8 gap-y-2 py-2 max-md:min-h-14 md:min-h-[72px]`}
         >
           <Logo />
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sm:gap-x-8">
+          {/* Desktop and tablet links; phones use the menu button instead */}
+          <div className="hidden flex-wrap items-center gap-x-6 gap-y-2 sm:gap-x-8 md:flex">
             <NavLinks />
           </div>
+          <MobileMenu />
         </nav>
       </header>
 
-      <main className={`${CONTAINER} flex-1 py-8 sm:py-12`}>
+      <main className={`${CONTAINER} flex-1 py-6 md:py-12`}>
         <Outlet />
       </main>
 

@@ -6,10 +6,10 @@ export default function Logo() {
   return (
     <Link
       to="/"
-      className="flex items-center gap-2 text-2xl font-bold tracking-tight text-brand sm:text-[30px]"
+      className="flex items-center gap-2 text-2xl font-bold tracking-tight text-brand max-sm:text-xl sm:text-[30px]"
       aria-label="QueueLess home"
     >
-      <Icon name="calendar" className="size-7 text-copper sm:size-8" />
+      <Icon name="calendar" className="size-7 text-copper max-sm:size-6 sm:size-8" />
       QueueLess
     </Link>
   )

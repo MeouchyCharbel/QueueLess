@@ -51,6 +51,8 @@ const PATHS = {
   ),
   salon: <path d="M12 20c-4 0-7-3-7-7 3 0 5 1 7 3 2-2 4-3 7-3 0 4-3 7-7 7ZM12 16c-1.5-2-1.5-5 0-8 1.5 3 1.5 6 0 8" />,
   dumbbell: <path d="M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12" />,
+  menu: <path d="M4 6h16M4 12h16M4 18h16" />,
+  close: <path d="M18 6 6 18M6 6l12 12" />,
   bolt: <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z" />,
   mail: (
     <>
