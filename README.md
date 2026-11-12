@@ -56,6 +56,18 @@ cp .env.example .env        # VITE_API_URL=http://localhost:3000
 npm run dev                 # http://localhost:5173
 ```
 
+### Front-end tests
+
+```bash
+cd client
+npm test          # Vitest + Testing Library, no server needed
+```
+
+`client/src/components/BookingForm.test.tsx` checks that the booking form only
+offers staff who perform the chosen service, keeps "Confirm booking" disabled
+until a free time is picked, sends the right booking to the API, and shows the
+error when the time was just taken (409). The API is replaced by a fake.
+
 Colors come from the brand palette and are defined once, as role-named
 tokens, in `client/src/index.css`: Charcoal Black `#21232E` (text, header),
 Royal Blue `#105BFF` (links, buttons) and Tangerine Orange `#FE8900`
@@ -165,3 +177,4 @@ Each step is one commit. Milestones are marked with git tags.
 15. Customer dashboard: view, cancel, reschedule
 16. Owner business setup: profile, hours and breaks, services, staff
 17. Owner dashboard: day and week views, confirm, cancel, reschedule, complete
+18. Front-end test: the booking form — **milestone-3**
