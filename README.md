@@ -7,15 +7,85 @@ conflicting bookings on the server.
 
 **Team:** Elie Antoine Mehanna Gaagea (240405), Charbel Meouchy (242309)
 
-> This README grows with the project. Setup, features, tech stack and
-> architecture sections are completed as each part is built.
+## Live app
+
+| | URL |
+|---|---|
+| Website | https://queue-less-sand-two.vercel.app |
+| API | https://queueless-api-nawz.onrender.com/api/health |
+
+The API runs on Render's free plan, which sleeps after 15 minutes without
+traffic: the first request after that can take up to a minute.
+
+## Features
+
+**Customers**
+- Sign up and log in; see and change only their own appointments
+- Search businesses by category and location
+- Book by service, staff member, date and a free time (only valid times are shown)
+- Dashboard of upcoming and past appointments; cancel or reschedule
+
+**Business owners**
+- Business setup: profile, weekly working hours and breaks, services (price,
+  duration) and staff (who performs which service, own hours); solo businesses
+  are a business with one staff member
+- Dashboard with day and week views to confirm, cancel, reschedule and
+  complete appointments
+
+**Platform**
+- Availability engine: free times respect working hours, breaks, service
+  length and existing bookings, in Beirut time
+- No double bookings, even when two customers book at the same moment
+  (checked by the server and enforced by a PostgreSQL exclusion constraint)
+- Email notifications (Resend) for bookings, cancellations and reschedules
+- Responsive design for mobile and desktop
+
+## Tech stack
+
+| Part | Technology |
+|---|---|
+| Front end | React 19, TypeScript, React Router, Tailwind CSS, Vite — deployed on Vercel |
+| Back end | Node.js, Express 5, REST API — deployed on Render |
+| Database | PostgreSQL on Neon, Prisma ORM |
+| Auth & security | JWT, bcrypt, zod validation, server-side role checks, helmet, CORS, rate limiting |
+| Third-party API | Resend (email) |
+| Tests | Vitest + Testing Library (front end), Vitest + Supertest (back end) |
+
+## Architecture
+
+```
+Browser (React app on Vercel)
+   │  fetch + "Authorization: Bearer <JWT>"
+   ▼
+Express API on Render
+   helmet → cors (only the website) → JSON body limit → rate limits
+   → routes → requireAuth (who are you?) → requireRole (are you allowed?)
+   → zod validation → Prisma
+   │                                   │
+   ▼                                   ▼
+PostgreSQL on Neon                Resend (emails)
+```
+
+- **Separation of concerns:** `client/` and `server/` are separate programs
+  with their own `package.json`, `.env` and tests. The client only talks to the
+  server through `client/src/api/client.ts`.
+- **Server layout:** `src/routes/` (one file per resource), `src/middleware/`
+  (auth, roles, validation, rate limits), `src/lib/` (availability engine,
+  time zone math, ownership checks, emails), `prisma/` (schema, migrations, seed).
+- **Client layout:** `src/pages/` (one per screen), `src/components/`
+  (reusable UI and feature components), `src/auth/` (login state shared through
+  context), `src/hooks/useApi.ts` (loading / error / data for every request).
+- **Security:** passwords are hashed with bcrypt and never returned; every
+  query is scoped to the logged-in user (another user's data answers 404);
+  inputs are validated and trimmed with zod and unknown fields are dropped;
+  secrets live only in `.env` files and the hosts' settings, never in git.
 
 ## Repository layout
 
 ```
 QueueLess/
 ├── client/   # React front end (Vite, TypeScript, Tailwind CSS)
-├── server/   # Express REST API
+├── server/   # Express REST API (Prisma, PostgreSQL)
 └── docs/     # Wireframes and database schema
 ```
 
@@ -178,3 +248,16 @@ Each step is one commit. Milestones are marked with git tags.
 16. Owner business setup: profile, hours and breaks, services, staff
 17. Owner dashboard: day and week views, confirm, cancel, reschedule, complete
 18. Front-end test: the booking form — **milestone-3**
+19. Deployment: API on Render, website on Vercel — **milestone-4**
+20. Final README and fresh-clone check — **final**
+
+## Deployment
+
+| | Render (API) | Vercel (website) |
+|---|---|---|
+| Root directory | `server` | `client` |
+| Build | `npm install && npm run build` (runs `prisma migrate deploy` and the seed) | Vite preset (`npm run build`) |
+| Start | `npm start` | static files; `vercel.json` sends every path to `index.html` |
+| Settings | `DATABASE_URL`, `JWT_SECRET`, `RESEND_API_KEY`, `CLIENT_ORIGIN` (the website URL, no trailing slash) | `VITE_API_URL` (the API URL) |
+
+Every push to `main` redeploys both. Health check: `/api/health`.
