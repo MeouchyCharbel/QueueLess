@@ -2,6 +2,16 @@
   "rewrites": [
     {
       "source": "/api/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "queue-less-git-audit-fixes-queue-less4.vercel.app"
+        }
+      ],
+      "destination": "https://queueless-api-staging.onrender.com/api/:path*"
+    },
+    {
+      "source": "/api/:path*",
       "destination": "https://queueless-api-nawz.onrender.com/api/:path*"
     },
     {
