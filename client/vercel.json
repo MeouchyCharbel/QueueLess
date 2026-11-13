@@ -5,7 +5,9 @@
       "has": [
         {
           "type": "host",
-          "value": "queue-less-git-audit-fixes-queue-less4.vercel.app"
+          "value": {
+            "suf": "-queue-less4.vercel.app"
+          }
         }
       ],
       "destination": "https://queueless-api-staging.onrender.com/api/:path*"
