@@ -11,6 +11,21 @@ import { signToken } from '../src/auth/token.js';
 import { config } from '../src/config.js';
 import { localDateOf, zonedDateTime } from '../src/lib/time.js';
 
+// Database-writing tests MUST target a separately created test database.
+// Two independent safeguards prevent accidental changes to production.
+function assertSafeTestDatabase() {
+  const raw = process.env.DATABASE_URL;
+  let databaseName;
+  try {
+    databaseName = new URL(raw).pathname.replace(/^\//, '');
+  } catch {
+    throw new Error('DATABASE_URL must point to an isolated queueless_test database');
+  }
+  if (databaseName !== 'queueless_test' || process.env.QUEUELESS_ALLOW_TEST_WRITES !== 'yes') {
+    throw new Error('Refusing destructive tests: use a queueless_test database with QUEUELESS_ALLOW_TEST_WRITES=yes. Never run against production.');
+  }
+}
+
 const RUN = Date.now(); // makes this run's emails unique
 const userIds = [];
 let business, service, staff, aliceToken, bobToken, ownerToken;
@@ -34,7 +49,10 @@ function book(token, startAt) {
     .send({ businessId: business.id, serviceId: service.id, staffId: staff.id, startAt });
 }
 
+let usingSafeTestDatabase = false;
 beforeAll(async () => {
+  assertSafeTestDatabase();
+  usingSafeTestDatabase = true;
   const owner = await createUser('owner', 'OWNER');
   ownerToken = signToken(owner);
   const category = await prisma.category.upsert({
@@ -66,6 +84,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (!usingSafeTestDatabase) return;
   await prisma.appointment.deleteMany({ where: { customerId: { in: userIds } } });
   await prisma.business.deleteMany({ where: { ownerId: { in: userIds } } }); // cleans both fixtures
   await prisma.user.deleteMany({ where: { id: { in: userIds } } });
@@ -238,5 +257,45 @@ describe('authentication — staging preview origins', () => {
     } finally {
       config.previewHostSuffix = previousSuffix;
     }
+  });
+});
+
+// Regression checks for boundaries between accounts and roles.
+describe('authorization — account and role isolation', () => {
+  it("hides other customers' appointments and refuses their modifications", async () => {
+    const created = await book(aliceToken, at(12, 0));
+    expect(created.status).toBe(201);
+    const targetId = created.body.id;
+
+    const list = await request(app).get('/api/appointments')
+      .set('Authorization', `Bearer ${bobToken}`);
+    expect(list.status).toBe(200);
+    expect(list.body.some((item) => item.id === targetId)).toBe(false);
+
+    const change = await request(app).patch(`/api/appointments/${targetId}`)
+      .set('Authorization', `Bearer ${bobToken}`)
+      .send({ status: 'CANCELLED' });
+    expect(change.status).toBe(404);
+  });
+
+  it('denies customers owner-only routes and anonymous appointment access', async () => {
+    const ownerOnly = await request(app).patch(`/api/businesses/${business.id}`)
+      .set('Authorization', `Bearer ${aliceToken}`)
+      .send({ name: 'Unauthorized update' });
+    expect(ownerOnly.status).toBe(403);
+
+    const anonymous = await request(app).get('/api/appointments');
+    expect(anonymous.status).toBe(401);
+  });
+
+  it('rejects a tampered JWT and a cookie write with no allowed Origin', async () => {
+    const tampered = await request(app).get('/api/appointments')
+      .set('Authorization', `Bearer ${aliceToken}tampered`);
+    expect(tampered.status).toBe(401);
+
+    const noOrigin = await request(app).post('/api/appointments')
+      .set('Cookie', `queueless_session=${aliceToken}`)
+      .send({});
+    expect(noOrigin.status).toBe(403);
   });
 });

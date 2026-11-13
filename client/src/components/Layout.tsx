@@ -17,9 +17,13 @@ function NavLinks() {
   const { user, checking, logout } = useAuth()
   const navigate = useNavigate()
 
-  function handleLogout() {
-    logout()
-    navigate('/')
+  async function handleLogout() {
+    try {
+      await logout()
+      navigate('/')
+    } catch {
+      window.alert('Could not log out. Check your connection and try again.')
+    }
   }
 
   if (checking) return null

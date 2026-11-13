@@ -13,7 +13,7 @@ export type AuthState = {
   checking: boolean // true while the server checks the HttpOnly cookie on page load
   login: (email: string, password: string) => Promise<User>
   signup: (data: SignupData) => Promise<User>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 // Who is logged in is app-wide data (header, protected pages, booking),

@@ -14,10 +14,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     return user
   }, [])
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    // Only claim logout succeeded once the server actually clears the cookie.
+    // If offline, preserve the user state so the UI doesn't falsely report logout.
+    await apiFetch<null>('/api/auth/logout', { method: 'POST' })
     setUser(null)
-    // Best effort: if offline, the cookie can still exist until it expires.
-    void apiFetch<null>('/api/auth/logout', { method: 'POST' }).catch(() => {})
   }, [])
 
   // A cookie is unreadable by JS. Ask the server who owns the current session.
@@ -31,9 +32,12 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    window.addEventListener('auth:expired', logout)
-    return () => window.removeEventListener('auth:expired', logout)
-  }, [logout])
+    // An expired or invalid session is not a user-initiated logout;
+    // do not send an unnecessary network request for it.
+    const expireSession = () => setUser(null)
+    window.addEventListener('auth:expired', expireSession)
+    return () => window.removeEventListener('auth:expired', expireSession)
+  }, [])
 
   async function login(email: string, password: string) {
     const data = await apiFetch<AuthResponse>('/api/auth/login', {

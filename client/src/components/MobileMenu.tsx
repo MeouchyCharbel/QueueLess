@@ -80,10 +80,14 @@ export default function MobileMenu() {
                 <p className="truncate px-2 text-sm text-muted">{user.email}</p>
                 <button
                   type="button"
-                  onClick={() => {
-                    close()
-                    logout()
-                    navigate('/')
+                  onClick={async () => {
+                    try {
+                      await logout()
+                      close()
+                      navigate('/')
+                    } catch {
+                      window.alert('Could not log out. Check your connection and try again.')
+                    }
                   }}
                   className="mt-2 w-full rounded-md px-2 py-3 text-left text-[15px] font-semibold text-danger hover:bg-danger-soft"
                 >

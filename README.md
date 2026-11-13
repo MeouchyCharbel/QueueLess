@@ -112,11 +112,13 @@ cd server
 npm test          # Vitest + Supertest
 ```
 
-`server/tests/appointments.test.js` checks that the API rejects overlapping
-bookings for the same staff member, allows back-to-back bookings, and lets only
-one of two simultaneous bookings win. It runs against the database in
-`DATABASE_URL`, creates its own test data, deletes it afterwards, and never
-sends real emails.
+`server/tests/appointments.test.js` checks booking conflicts, account isolation,
+authorization and cookie protection. It creates/deletes temporary test records,
+so it refuses to run unless `DATABASE_URL` names an isolated `queueless_test`
+database and `QUEUELESS_ALLOW_TEST_WRITES=yes` is explicitly set. **Never run
+integration tests against production**. The GitHub Actions CI workflow creates
+an ephemeral PostgreSQL 16 test database, applies migrations and runs these
+checks automatically without any production credentials.
 
 ## Running the front end locally
 
