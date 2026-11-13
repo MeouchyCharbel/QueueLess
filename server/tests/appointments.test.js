@@ -12,7 +12,7 @@ import { localDateOf, zonedDateTime } from '../src/lib/time.js';
 
 const RUN = Date.now(); // makes this run's emails unique
 const userIds = [];
-let business, service, staff, aliceToken, bobToken;
+let business, service, staff, aliceToken, bobToken, ownerToken;
 
 // A date one week from now, so the times are always in the future.
 const DAY = localDateOf(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
@@ -35,6 +35,7 @@ function book(token, startAt) {
 
 beforeAll(async () => {
   const owner = await createUser('owner', 'OWNER');
+  ownerToken = signToken(owner);
   const category = await prisma.category.upsert({
     where: { name: 'Barbershop' },
     update: {},
@@ -108,5 +109,32 @@ describe('POST /api/appointments — no double bookings', () => {
       where: { staffId: staff.id, startAt: new Date(at(14, 0)) },
     });
     expect(saved).toBe(1);
+  });
+});
+
+// An appointment cannot end up in two different final states. The API must
+// handle competing updates, not only competing new bookings.
+describe('PATCH /api/appointments/:id — conflicting changes', () => {
+  it('accepts at most one competing cancellation/completion', async () => {
+    const created = await book(aliceToken, at(15, 0));
+    expect(created.status).toBe(201);
+    const id = created.body.id;
+    const url = `/api/appointments/${id}`;
+    const ownerChange = (status) => request(app)
+      .patch(url)
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ status });
+
+    const confirmed = await ownerChange('CONFIRMED');
+    expect(confirmed.status).toBe(200);
+
+    const [first, second] = await Promise.all([
+      ownerChange('COMPLETED'),
+      ownerChange('CANCELLED'),
+    ]);
+    expect([first.status, second.status].sort()).toEqual([200, 409]);
+
+    const saved = await prisma.appointment.findUnique({ where: { id } });
+    expect(['CANCELLED', 'COMPLETED']).toContain(saved.status);
   });
 });

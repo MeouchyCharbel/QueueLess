@@ -175,8 +175,16 @@ appointmentsRouter.patch('/:id', validate(ChangeInput), async (req, res) => {
     : await checkReschedule(req.userRole, appointment, new Date(req.body.startAt));
 
   try {
+    // Optimistic concurrency: only update the version we just validated.
+    // The conditions and the write execute atomically in the database.
     const updated = await prisma.appointment.update({
-      where: { id: appointment.id },
+      where: {
+        id: appointment.id,
+        status: appointment.status,
+        startAt: appointment.startAt,
+        endAt: appointment.endAt,
+        updatedAt: appointment.updatedAt,
+      },
       data,
       include: DETAILS,
     });
@@ -190,6 +198,11 @@ appointmentsRouter.patch('/:id', validate(ChangeInput), async (req, res) => {
       notifyRescheduled(updated, appointment.startAt);
     }
   } catch (err) {
+    // Prisma returns P2025 if another request updated the appointment
+    // between our initial read and the conditional update.
+    if (err.code === 'P2025') {
+      throw new HttpError(409, 'This appointment changed. Refresh and try again.');
+    }
     if (isOverlapError(err)) {
       throw new HttpError(409, 'This time was just booked by someone else. Please pick another one.');
     }
