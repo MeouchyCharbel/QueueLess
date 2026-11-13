@@ -66,7 +66,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await prisma.appointment.deleteMany({ where: { customerId: { in: userIds } } });
-  await prisma.business.deleteMany({ where: { id: business?.id } }); // also removes service, staff, hours
+  await prisma.business.deleteMany({ where: { ownerId: { in: userIds } } }); // cleans both fixtures
   await prisma.user.deleteMany({ where: { id: { in: userIds } } });
   await prisma.$disconnect();
 });
@@ -136,5 +136,33 @@ describe('PATCH /api/appointments/:id — conflicting changes', () => {
 
     const saved = await prisma.appointment.findUnique({ where: { id } });
     expect(['CANCELLED', 'COMPLETED']).toContain(saved.status);
+  });
+});
+
+// The database, not just the API's existence check, must enforce this rule.
+describe('POST /api/businesses — one business per owner', () => {
+  it('allows only one concurrent creation and enforces uniqueness in PostgreSQL', async () => {
+    const newOwner = await createUser('secondOwner', 'OWNER');
+    const token = signToken(newOwner);
+    const details = {
+      name: 'A new test business',
+      categoryId: business.categoryId,
+      location: 'Beirut',
+      address: 'Main street',
+      phone: '12345678',
+      email: 'second-owner@test.local',
+    };
+    const create = () => request(app)
+      .post('/api/businesses')
+      .set('Authorization', `Bearer ${token}`)
+      .send(details);
+
+    const [first, second] = await Promise.all([create(), create()]);
+    expect([first.status, second.status].sort()).toEqual([201, 409]);
+    expect(await prisma.business.count({ where: { ownerId: newOwner.id } })).toBe(1);
+
+    await expect(prisma.business.create({
+      data: { ...details, name: 'Another business', ownerId: newOwner.id },
+    })).rejects.toMatchObject({ code: 'P2002' });
   });
 });

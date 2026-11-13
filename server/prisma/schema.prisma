@@ -29,7 +29,7 @@ model User {
   passwordHash String // bcrypt hash — the plain password is never stored
   role         Role
   createdAt    DateTime      @default(now())
-  businesses   Business[] // businesses this user owns (owners only)
+  business     Business? // one business per owner (database-enforced)
   appointments Appointment[] // appointments this user booked (customers only)
 }
 
@@ -41,7 +41,7 @@ model Category {
 
 model Business {
   id           Int            @id @default(autoincrement())
-  ownerId      Int
+  ownerId      Int            @unique // one business per owner
   categoryId   Int
   name         String
   location     String // city or area, used by the location search filter
