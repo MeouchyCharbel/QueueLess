@@ -1,7 +1,7 @@
 // Bearer tokens remain supported for API clients and existing tests.
 // The browser uses an HttpOnly cookie sent through the same-origin API proxy.
 import { verifyToken } from '../auth/token.js';
-import { config } from '../config.js';
+import { isAllowedClientOrigin } from '../config.js';
 
 const COOKIE_NAME = 'queueless_session';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
@@ -28,7 +28,7 @@ export function requireAuth(req, res, next) {
 
   // For cookie-authenticated writes, reject requests from other origins.
   // SameSite=Lax is also used, but we check Origin as defense in depth.
-  if (!hasBearer && !SAFE_METHODS.has(req.method) && req.get('origin') !== config.clientOrigin) {
+  if (!hasBearer && !SAFE_METHODS.has(req.method) && !isAllowedClientOrigin(req.get('origin'))) {
     return res.status(403).json({ error: 'Invalid request origin' });
   }
 

@@ -203,3 +203,40 @@ describe('authentication — secure browser cookies', () => {
     expect(logout.headers['set-cookie'][0]).toMatch(/Max-Age=0|Expires=/);
   });
 });
+
+// Render staging may explicitly allow this Vercel team's preview hostnames.
+// Production never sets the suffix, so only CLIENT_ORIGIN is accepted there.
+describe('authentication — staging preview origins', () => {
+  it('allows configured preview writes, blocks foreign origins, and denies previews when disabled', async () => {
+    const previousSuffix = config.previewHostSuffix;
+    const preview = 'https://queue-less-abc123-queue-less4.vercel.app';
+    const cookie = `queueless_session=${aliceToken}`;
+    try {
+      config.previewHostSuffix = '-queue-less4.vercel.app';
+
+      const validWrite = await request(app).post('/api/appointments')
+        .set('Origin', preview).set('Cookie', cookie).send({});
+      // Invalid body produces 400, rather than failing CSRF protection (403).
+      expect(validWrite.status).toBe(400);
+
+      const logout = await request(app).post('/api/auth/logout')
+        .set('Origin', preview).set('Cookie', cookie);
+      expect(logout.status).toBe(204);
+
+      const foreignWrite = await request(app).post('/api/appointments')
+        .set('Origin', 'https://attacker.example').set('Cookie', cookie).send({});
+      expect(foreignWrite.status).toBe(403);
+
+      const deceptiveOrigin = await request(app).post('/api/auth/logout')
+        .set('Origin', `${preview}.attacker.example`).set('Cookie', cookie);
+      expect(deceptiveOrigin.status).toBe(403);
+
+      config.previewHostSuffix = '';
+      const disabled = await request(app).post('/api/auth/logout')
+        .set('Origin', preview).set('Cookie', cookie);
+      expect(disabled.status).toBe(403);
+    } finally {
+      config.previewHostSuffix = previousSuffix;
+    }
+  });
+});

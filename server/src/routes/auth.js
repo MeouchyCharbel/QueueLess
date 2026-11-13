@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import { z } from 'zod';
 import { prisma } from '../db.js';
 import { signToken } from '../auth/token.js';
-import { config } from '../config.js';
+import { config, isAllowedClientOrigin } from '../config.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 
@@ -97,7 +97,7 @@ authRouter.post('/login', validate(LoginInput), async (req, res) => {
 // POST /api/auth/logout: clear the HttpOnly browser cookie.
 authRouter.post('/logout', (req, res) => {
   const origin = req.get('origin');
-  if (origin && origin !== config.clientOrigin) {
+  if (origin && !isAllowedClientOrigin(origin)) {
     return res.status(403).json({ error: 'Invalid request origin' });
   }
   res.clearCookie(COOKIE_NAME, COOKIE_OPTIONS);
