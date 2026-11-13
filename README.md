@@ -47,7 +47,7 @@ traffic: the first request after that can take up to a minute.
 | Front end | React 19, TypeScript, React Router, Tailwind CSS, Vite — deployed on Vercel |
 | Back end | Node.js, Express 5, REST API — deployed on Render |
 | Database | PostgreSQL on Neon, Prisma ORM |
-| Auth & security | JWT, bcrypt, zod validation, server-side role checks, helmet, CORS, rate limiting |
+| Auth & security | HttpOnly SameSite JWT cookies (bearer API compatibility), bcrypt, zod, server-side roles, helmet, CORS, rate limiting |
 | Third-party API | Resend (email) |
 | Tests | Vitest + Testing Library (front end), Vitest + Supertest (back end) |
 
@@ -55,7 +55,10 @@ traffic: the first request after that can take up to a minute.
 
 ```
 Browser (React app on Vercel)
-   │  fetch + "Authorization: Bearer <JWT>"
+   │  fetch /api + HttpOnly session cookie
+   ▼
+Vercel same-origin API rewrite
+   │
    ▼
 Express API on Render
    helmet → cors (only the website) → JSON body limit → rate limits
@@ -122,7 +125,7 @@ Start the API first (see above), then in a second terminal:
 ```bash
 cd client
 npm install
-cp .env.example .env        # VITE_API_URL=http://localhost:3000
+cp .env.example .env        # Vite proxies /api to localhost:3000
 npm run dev                 # http://localhost:5173
 ```
 
@@ -149,7 +152,7 @@ Design documents: [wireframes](docs/wireframes.md) and [database schema](docs/sc
 
 ## API routes
 
-All bodies are JSON. 🔒 = needs `Authorization: Bearer <token>`;
+All bodies are JSON. 🔒 = requires HttpOnly session cookie (browser) or `Authorization: Bearer <token>` (API);
 **owner** = 🔒 and the account role must be `OWNER`.
 
 | Method | Path | Access | Success | Errors |
@@ -158,6 +161,7 @@ All bodies are JSON. 🔒 = needs `Authorization: Bearer <token>`;
 | POST | `/api/auth/signup` | public | 201 `{ token, user }` | 400, 409, 429 |
 | POST | `/api/auth/login` | public | 200 `{ token, user }` | 400, 401, 429 |
 | GET | `/api/auth/me` | 🔒 | 200 user | 401 |
+| POST | `/api/auth/logout` | public | 204, clears browser session cookie | 403 |
 | GET | `/api/categories` | public | 200 list | — |
 | GET | `/api/businesses?categoryId=&location=` | public | 200 list (bookable businesses only; location matches city or address) | 400 |
 | GET | `/api/businesses/:id` | public | 200 business + active services and staff | 404 |
@@ -260,6 +264,21 @@ Each step is one commit. Milestones are marked with git tags.
 | Root directory | `server` | `client` |
 | Build | `npm install && npm run build` (runs `prisma migrate deploy` and the seed) | Vite preset (`npm run build`) |
 | Start | `npm start` | static files; `vercel.json` sends every path to `index.html` |
-| Settings | `DATABASE_URL`, `JWT_SECRET`, `RESEND_API_KEY`, `CLIENT_ORIGIN` (the website URL, no trailing slash) | `VITE_API_URL` (the API URL) |
+| Settings | `DATABASE_URL`, `JWT_SECRET`, `RESEND_API_KEY`, `CLIENT_ORIGIN` (the website URL, no trailing slash) | `/api` proxied through `client/vercel.json`; no browser API URL secret required |
 
 Every push to `main` redeploys both. Health check: `/api/health`.
+
+### Browser authentication (Fix #3)
+
+The updated React client uses same-origin `/api` requests and **does not store JWTs
+in localStorage**. Express sets a one-hour, HttpOnly, SameSite=Lax session cookie
+restricted to `/api`. Production cookies are Secure (HTTPS only). Browser requests
+are forwarded from Vercel to Render by the **first rewrite** in
+`client/vercel.json`. Local Vite proxies `/api` to `http://localhost:3000`.
+An origin check protects authenticated state-changing requests using cookies.
+
+For safe rollout, the Express API temporarily continues returning a bearer token
+on login/signup so the older frontend remains compatible while deployments
+are updated. The new browser frontend ignores that token. Rotate any compromised
+JWT or database secrets before production deployment. Validate login, refresh,
+logout, and booking on a preview deployment before merging to `main`.

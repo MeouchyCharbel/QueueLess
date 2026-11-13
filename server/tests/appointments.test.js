@@ -8,6 +8,7 @@ import request from 'supertest';
 import { app } from '../src/app.js';
 import { prisma } from '../src/db.js';
 import { signToken } from '../src/auth/token.js';
+import { config } from '../src/config.js';
 import { localDateOf, zonedDateTime } from '../src/lib/time.js';
 
 const RUN = Date.now(); // makes this run's emails unique
@@ -164,5 +165,41 @@ describe('POST /api/businesses — one business per owner', () => {
     await expect(prisma.business.create({
       data: { ...details, name: 'Another business', ownerId: newOwner.id },
     })).rejects.toMatchObject({ code: 'P2002' });
+  });
+});
+
+// Cookie login is same-origin, HttpOnly and protected from cross-origin writes.
+describe('authentication — secure browser cookies', () => {
+  it('sets HttpOnly cookie, authenticates /me, rejects cross-origin writes, and clears session', async () => {
+    const signup = await request(app).post('/api/auth/signup').send({
+      name: 'Cookie Tester', email: `cookie.${RUN}@test.local`,
+      password: 'TestPassword123!', role: 'CUSTOMER',
+    });
+    expect(signup.status).toBe(201);
+    userIds.push(signup.body.user.id); // remove this test user in afterAll
+    const setCookies = signup.headers['set-cookie'];
+    expect(setCookies).toBeDefined();
+    const session = setCookies[0];
+    expect(session).toContain('HttpOnly');
+    expect(session).toContain('SameSite=Lax');
+    expect(session).toContain('Path=/api');
+    const cookie = session.split(';')[0];
+    expect(cookie.startsWith('queueless_session=')).toBe(true);
+
+    const me = await request(app).get('/api/auth/me').set('Cookie', cookie);
+    expect(me.status).toBe(200);
+    expect(me.body.email).toBe(`cookie.${RUN}@test.local`);
+
+    const blocked = await request(app).post('/api/appointments')
+      .set('Cookie', cookie)
+      .set('Origin', 'https://attacker.example')
+      .send({});
+    expect(blocked.status).toBe(403);
+
+    const logout = await request(app).post('/api/auth/logout')
+      .set('Cookie', cookie)
+      .set('Origin', config.clientOrigin);
+    expect(logout.status).toBe(204);
+    expect(logout.headers['set-cookie'][0]).toMatch(/Max-Age=0|Expires=/);
   });
 });
