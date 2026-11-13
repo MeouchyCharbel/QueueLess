@@ -8,11 +8,27 @@ import request from 'supertest';
 import { app } from '../src/app.js';
 import { prisma } from '../src/db.js';
 import { signToken } from '../src/auth/token.js';
+import { config } from '../src/config.js';
 import { localDateOf, zonedDateTime } from '../src/lib/time.js';
+
+// Database-writing tests MUST target a separately created test database.
+// Two independent safeguards prevent accidental changes to production.
+function assertSafeTestDatabase() {
+  const raw = process.env.DATABASE_URL;
+  let databaseName;
+  try {
+    databaseName = new URL(raw).pathname.replace(/^\//, '');
+  } catch {
+    throw new Error('DATABASE_URL must point to an isolated queueless_test database');
+  }
+  if (databaseName !== 'queueless_test' || process.env.QUEUELESS_ALLOW_TEST_WRITES !== 'yes') {
+    throw new Error('Refusing destructive tests: use a queueless_test database with QUEUELESS_ALLOW_TEST_WRITES=yes. Never run against production.');
+  }
+}
 
 const RUN = Date.now(); // makes this run's emails unique
 const userIds = [];
-let business, service, staff, aliceToken, bobToken;
+let business, service, staff, aliceToken, bobToken, ownerToken;
 
 // A date one week from now, so the times are always in the future.
 const DAY = localDateOf(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
@@ -33,8 +49,12 @@ function book(token, startAt) {
     .send({ businessId: business.id, serviceId: service.id, staffId: staff.id, startAt });
 }
 
+let usingSafeTestDatabase = false;
 beforeAll(async () => {
+  assertSafeTestDatabase();
+  usingSafeTestDatabase = true;
   const owner = await createUser('owner', 'OWNER');
+  ownerToken = signToken(owner);
   const category = await prisma.category.upsert({
     where: { name: 'Barbershop' },
     update: {},
@@ -64,8 +84,9 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (!usingSafeTestDatabase) return;
   await prisma.appointment.deleteMany({ where: { customerId: { in: userIds } } });
-  await prisma.business.deleteMany({ where: { id: business?.id } }); // also removes service, staff, hours
+  await prisma.business.deleteMany({ where: { ownerId: { in: userIds } } }); // cleans both fixtures
   await prisma.user.deleteMany({ where: { id: { in: userIds } } });
   await prisma.$disconnect();
 });
@@ -108,5 +129,173 @@ describe('POST /api/appointments — no double bookings', () => {
       where: { staffId: staff.id, startAt: new Date(at(14, 0)) },
     });
     expect(saved).toBe(1);
+  });
+});
+
+// An appointment cannot end up in two different final states. The API must
+// handle competing updates, not only competing new bookings.
+describe('PATCH /api/appointments/:id — conflicting changes', () => {
+  it('accepts at most one competing cancellation/completion', async () => {
+    const created = await book(aliceToken, at(15, 0));
+    expect(created.status).toBe(201);
+    const id = created.body.id;
+    const url = `/api/appointments/${id}`;
+    const ownerChange = (status) => request(app)
+      .patch(url)
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ status });
+
+    const confirmed = await ownerChange('CONFIRMED');
+    expect(confirmed.status).toBe(200);
+
+    const [first, second] = await Promise.all([
+      ownerChange('COMPLETED'),
+      ownerChange('CANCELLED'),
+    ]);
+    expect([first.status, second.status].sort()).toEqual([200, 409]);
+
+    const saved = await prisma.appointment.findUnique({ where: { id } });
+    expect(['CANCELLED', 'COMPLETED']).toContain(saved.status);
+  });
+});
+
+// The database, not just the API's existence check, must enforce this rule.
+describe('POST /api/businesses — one business per owner', () => {
+  it('allows only one concurrent creation and enforces uniqueness in PostgreSQL', async () => {
+    const newOwner = await createUser('secondOwner', 'OWNER');
+    const token = signToken(newOwner);
+    const details = {
+      name: 'A new test business',
+      categoryId: business.categoryId,
+      location: 'Beirut',
+      address: 'Main street',
+      phone: '12345678',
+      email: 'second-owner@test.local',
+    };
+    const create = () => request(app)
+      .post('/api/businesses')
+      .set('Authorization', `Bearer ${token}`)
+      .send(details);
+
+    const [first, second] = await Promise.all([create(), create()]);
+    expect([first.status, second.status].sort()).toEqual([201, 409]);
+    expect(await prisma.business.count({ where: { ownerId: newOwner.id } })).toBe(1);
+
+    await expect(prisma.business.create({
+      data: { ...details, name: 'Another business', ownerId: newOwner.id },
+    })).rejects.toMatchObject({ code: 'P2002' });
+  });
+});
+
+// Cookie login is same-origin, HttpOnly and protected from cross-origin writes.
+describe('authentication — secure browser cookies', () => {
+  it('sets HttpOnly cookie, authenticates /me, rejects cross-origin writes, and clears session', async () => {
+    const signup = await request(app).post('/api/auth/signup').send({
+      name: 'Cookie Tester', email: `cookie.${RUN}@test.local`,
+      password: 'TestPassword123!', role: 'CUSTOMER',
+    });
+    expect(signup.status).toBe(201);
+    userIds.push(signup.body.user.id); // remove this test user in afterAll
+    const setCookies = signup.headers['set-cookie'];
+    expect(setCookies).toBeDefined();
+    const session = setCookies[0];
+    expect(session).toContain('HttpOnly');
+    expect(session).toContain('SameSite=Lax');
+    expect(session).toContain('Path=/api');
+    const cookie = session.split(';')[0];
+    expect(cookie.startsWith('queueless_session=')).toBe(true);
+
+    const me = await request(app).get('/api/auth/me').set('Cookie', cookie);
+    expect(me.status).toBe(200);
+    expect(me.body.email).toBe(`cookie.${RUN}@test.local`);
+
+    const blocked = await request(app).post('/api/appointments')
+      .set('Cookie', cookie)
+      .set('Origin', 'https://attacker.example')
+      .send({});
+    expect(blocked.status).toBe(403);
+
+    const logout = await request(app).post('/api/auth/logout')
+      .set('Cookie', cookie)
+      .set('Origin', config.clientOrigin);
+    expect(logout.status).toBe(204);
+    expect(logout.headers['set-cookie'][0]).toMatch(/Max-Age=0|Expires=/);
+  });
+});
+
+// Render staging may explicitly allow this Vercel team's preview hostnames.
+// Production never sets the suffix, so only CLIENT_ORIGIN is accepted there.
+describe('authentication — staging preview origins', () => {
+  it('allows configured preview writes, blocks foreign origins, and denies previews when disabled', async () => {
+    const previousSuffix = config.previewHostSuffix;
+    const preview = 'https://queue-less-abc123-queue-less4.vercel.app';
+    const cookie = `queueless_session=${aliceToken}`;
+    try {
+      config.previewHostSuffix = '-queue-less4.vercel.app';
+
+      const validWrite = await request(app).post('/api/appointments')
+        .set('Origin', preview).set('Cookie', cookie).send({});
+      // Invalid body produces 400, rather than failing CSRF protection (403).
+      expect(validWrite.status).toBe(400);
+
+      const logout = await request(app).post('/api/auth/logout')
+        .set('Origin', preview).set('Cookie', cookie);
+      expect(logout.status).toBe(204);
+
+      const foreignWrite = await request(app).post('/api/appointments')
+        .set('Origin', 'https://attacker.example').set('Cookie', cookie).send({});
+      expect(foreignWrite.status).toBe(403);
+
+      const deceptiveOrigin = await request(app).post('/api/auth/logout')
+        .set('Origin', `${preview}.attacker.example`).set('Cookie', cookie);
+      expect(deceptiveOrigin.status).toBe(403);
+
+      config.previewHostSuffix = '';
+      const disabled = await request(app).post('/api/auth/logout')
+        .set('Origin', preview).set('Cookie', cookie);
+      expect(disabled.status).toBe(403);
+    } finally {
+      config.previewHostSuffix = previousSuffix;
+    }
+  });
+});
+
+// Regression checks for boundaries between accounts and roles.
+describe('authorization — account and role isolation', () => {
+  it("hides other customers' appointments and refuses their modifications", async () => {
+    const created = await book(aliceToken, at(12, 0));
+    expect(created.status).toBe(201);
+    const targetId = created.body.id;
+
+    const list = await request(app).get('/api/appointments')
+      .set('Authorization', `Bearer ${bobToken}`);
+    expect(list.status).toBe(200);
+    expect(list.body.some((item) => item.id === targetId)).toBe(false);
+
+    const change = await request(app).patch(`/api/appointments/${targetId}`)
+      .set('Authorization', `Bearer ${bobToken}`)
+      .send({ status: 'CANCELLED' });
+    expect(change.status).toBe(404);
+  });
+
+  it('denies customers owner-only routes and anonymous appointment access', async () => {
+    const ownerOnly = await request(app).patch(`/api/businesses/${business.id}`)
+      .set('Authorization', `Bearer ${aliceToken}`)
+      .send({ name: 'Unauthorized update' });
+    expect(ownerOnly.status).toBe(403);
+
+    const anonymous = await request(app).get('/api/appointments');
+    expect(anonymous.status).toBe(401);
+  });
+
+  it('rejects a tampered JWT and a cookie write with no allowed Origin', async () => {
+    const tampered = await request(app).get('/api/appointments')
+      .set('Authorization', `Bearer ${aliceToken}tampered`);
+    expect(tampered.status).toBe(401);
+
+    const noOrigin = await request(app).post('/api/appointments')
+      .set('Cookie', `queueless_session=${aliceToken}`)
+      .send({});
+    expect(noOrigin.status).toBe(403);
   });
 });

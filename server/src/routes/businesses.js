@@ -37,10 +37,19 @@ businessesRouter.post('/', ...ownerOnly, validate(BusinessInput), async (req, re
   if (!(await categoryExists(req.body.categoryId))) {
     return res.status(400).json({ error: 'categoryId: Unknown category' });
   }
-  const business = await prisma.business.create({
-    data: { ...req.body, ownerId: req.userId }, // owner comes from the token, never the body
-  });
-  res.status(201).json(business);
+  try {
+    const business = await prisma.business.create({
+      data: { ...req.body, ownerId: req.userId }, // owner comes from the token, never the body
+    });
+    res.status(201).json(business);
+  } catch (err) {
+    // Concurrent requests may both pass the earlier existence check.
+    // The unique index is the final authority: return a conflict, not a 500.
+    if (err.code === 'P2002') {
+      return res.status(409).json({ error: 'You already have a business' });
+    }
+    throw err;
+  }
 });
 
 // GET /api/businesses/mine -> 200 everything the setup pages need | 404

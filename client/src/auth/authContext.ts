@@ -10,10 +10,10 @@ export type SignupData = {
 
 export type AuthState = {
   user: User | null // null = logged out
-  checking: boolean // true while a saved token is being checked on page load
+  checking: boolean // true while the server checks the HttpOnly cookie on page load
   login: (email: string, password: string) => Promise<User>
   signup: (data: SignupData) => Promise<User>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 // Who is logged in is app-wide data (header, protected pages, booking),

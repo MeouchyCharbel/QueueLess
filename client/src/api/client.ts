@@ -1,13 +1,6 @@
-// One function owns every request to the API, so these rules live in one place:
-//   1. the base URL comes from config (VITE_API_URL), never hard-coded
-//   2. the login token is added automatically
-//   3. a bad status becomes a thrown ApiError with the server's message
-//   4. a 401 on a logged-in request fires "auth:expired" so the app logs out
-
-const API_URL = import.meta.env.VITE_API_URL
-
-export const TOKEN_KEY = 'token'
-
+// Requests go to /api on the *same origin* as the website.
+// Local Vite and production Vercel proxy /api to the Express server.
+// The browser sends an HttpOnly session cookie; JavaScript never reads JWTs.
 export class ApiError extends Error {
   status: number
 
@@ -18,24 +11,22 @@ export class ApiError extends Error {
 }
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem(TOKEN_KEY)
-
   let res: Response
   try {
-    res = await fetch(API_URL + path, {
+    res = await fetch(path, {
       ...options,
+      credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
       },
     })
   } catch {
-    // fetch only rejects when no answer arrives at all (offline, server down).
     throw new ApiError(0, 'Could not reach the server. Check your connection and try again.')
   }
 
-  if (res.status === 401 && token) {
+  // Failed login attempts and the initial session check are not a logout event.
+  if (res.status === 401 && !['/api/auth/login', '/api/auth/signup', '/api/auth/me'].includes(path)) {
     window.dispatchEvent(new Event('auth:expired'))
   }
 
@@ -44,6 +35,5 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     throw new ApiError(res.status, body?.error ?? `Request failed (${res.status})`)
   }
 
-  // 204 No Content has no body to read.
   return (res.status === 204 ? null : await res.json()) as T
 }

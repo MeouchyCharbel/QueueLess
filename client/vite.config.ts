@@ -6,6 +6,12 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Same-origin API proxy for local development (cookie authentication).
+  server: {
+    proxy: {
+      '/api': { target: 'http://localhost:3000', changeOrigin: true },
+    },
+  },
   test: {
     environment: 'jsdom', // a simulated browser for component tests
     setupFiles: './src/test/setup.ts',

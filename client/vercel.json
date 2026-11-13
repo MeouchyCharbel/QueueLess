@@ -1,3 +1,35 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": {
+            "suf": "-queue-less4.vercel.app"
+          }
+        }
+      ],
+      "destination": "https://queueless-api-staging.onrender.com/api/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://queueless-api-nawz.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        }
+      ]
+    }
+  ]
 }

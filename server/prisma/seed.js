@@ -6,9 +6,12 @@ const prisma = new PrismaClient();
 
 const CATEGORIES = ['Barbershop', 'Salon', 'Clinic', 'Personal trainer', 'Consultant'];
 
-for (const name of CATEGORIES) {
-  await prisma.category.upsert({ where: { name }, update: {}, create: { name } });
-}
+try {
+  for (const name of CATEGORIES) {
+    await prisma.category.upsert({ where: { name }, update: {}, create: { name } });
+  }
 
-console.log(`Seeded ${CATEGORIES.length} categories`);
-await prisma.$disconnect();
+  console.log(`Seeded ${CATEGORIES.length} categories`);
+} finally {
+  await prisma.$disconnect();
+}
