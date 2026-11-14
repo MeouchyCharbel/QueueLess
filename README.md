@@ -272,6 +272,7 @@ Each step is one commit. Milestones are marked with git tags.
 24. Audit fixes against sessions 22-23: per-visitor rate limits behind the Vercel proxy,
     page-load session check without errors, smaller photos, long caching of build files,
     code splitting, database indexes for the columns we filter by
+25. Final audit: appointments can only be completed once they have started
 
 ## Deployment
 

@@ -135,18 +135,34 @@ describe('POST /api/appointments — no double bookings', () => {
 // An appointment cannot end up in two different final states. The API must
 // handle competing updates, not only competing new bookings.
 describe('PATCH /api/appointments/:id — conflicting changes', () => {
+  it('refuses to complete an appointment that has not started yet', async () => {
+    const created = await book(aliceToken, at(16, 0)); // next week
+    const url = `/api/appointments/${created.body.id}`;
+    const owner = (status) => request(app).patch(url).set('Authorization', `Bearer ${ownerToken}`).send({ status });
+
+    expect((await owner('CONFIRMED')).status).toBe(200);
+    const early = await owner('COMPLETED');
+    expect(early.status).toBe(409);
+    expect(early.body.error).toMatch(/started/i);
+  });
+
   it('accepts at most one competing cancellation/completion', async () => {
-    const created = await book(aliceToken, at(15, 0));
-    expect(created.status).toBe(201);
-    const id = created.body.id;
+    // An appointment that started an hour ago (created directly: the API
+    // only books future times), already confirmed by the owner.
+    const alice = await prisma.user.findFirst({ where: { email: `alice.${RUN}@test.local` } });
+    const startAt = new Date(Date.now() - 60 * 60 * 1000);
+    const past = await prisma.appointment.create({
+      data: {
+        customerId: alice.id, businessId: business.id, serviceId: service.id, staffId: staff.id,
+        status: 'CONFIRMED', startAt, endAt: new Date(startAt.getTime() + 30 * 60 * 1000),
+      },
+    });
+    const id = past.id;
     const url = `/api/appointments/${id}`;
     const ownerChange = (status) => request(app)
       .patch(url)
       .set('Authorization', `Bearer ${ownerToken}`)
       .send({ status });
-
-    const confirmed = await ownerChange('CONFIRMED');
-    expect(confirmed.status).toBe(200);
 
     const [first, second] = await Promise.all([
       ownerChange('COMPLETED'),

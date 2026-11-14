@@ -222,6 +222,10 @@ function checkStatusChange(role, appointment, newStatus) {
   if (role === 'CUSTOMER' && appointment.startAt <= new Date()) {
     throw new HttpError(409, 'Past appointments cannot be cancelled');
   }
+  // An appointment can only be marked as done once it has started.
+  if (newStatus === 'COMPLETED' && appointment.startAt > new Date()) {
+    throw new HttpError(409, 'Only appointments that have started can be completed');
+  }
   return { status: newStatus };
 }
 

@@ -22,6 +22,11 @@ export default function OwnerAppointmentCard({ appointment, onChanged }: Props) 
 
   const { service, staff, customer, status, startAt, endAt } = appointment
   const active = status === 'PENDING' || status === 'CONFIRMED'
+  // The clock is read once when the card appears (reading it during every
+  // render would make the output change on its own). Only an appointment
+  // that has started can be marked as completed (the server checks too).
+  const [openedAt] = useState(() => Date.now())
+  const started = new Date(startAt).getTime() <= openedAt
 
   async function setStatus(next: AppointmentStatus, message: string) {
     setError('')
@@ -73,7 +78,7 @@ export default function OwnerAppointmentCard({ appointment, onChanged }: Props) 
               Confirm
             </Button>
           )}
-          {status === 'CONFIRMED' && (
+          {status === 'CONFIRMED' && started && (
             <Button
               disabled={busy}
               onClick={() => setStatus('COMPLETED', `Marked ${customer.name}'s ${service.name} as completed.`)}
