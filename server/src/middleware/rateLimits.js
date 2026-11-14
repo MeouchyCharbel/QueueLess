@@ -8,6 +8,7 @@ const FIFTEEN_MINUTES = 15 * 60_000;
 export const apiLimiter = rateLimit({
   windowMs: FIFTEEN_MINUTES,
   limit: 300,
+  standardHeaders: 'draft-7', // a RateLimit header shows how many requests are left
   message: { error: 'Too many requests. Try again later.' },
 });
 
@@ -16,5 +17,6 @@ export const authLimiter = rateLimit({
   windowMs: FIFTEEN_MINUTES,
   limit: 5,
   skipSuccessfulRequests: true, // only failed attempts count
+  standardHeaders: 'draft-7',
   message: { error: 'Too many attempts. Try again later.' },
 });

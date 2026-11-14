@@ -24,8 +24,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   // A cookie is unreadable by JS. Ask the server who owns the current session.
   useEffect(() => {
     let active = true
-    apiFetch<User>('/api/auth/me')
-      .then((currentUser) => { if (active) setUser(currentUser) })
+    apiFetch<{ user: User | null }>('/api/auth/session')
+      .then((data) => { if (active) setUser(data.user) })
       .catch(() => { if (active) setUser(null) })
       .finally(() => { if (active) setChecking(false) })
     return () => { active = false }

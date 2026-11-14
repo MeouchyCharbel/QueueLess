@@ -26,7 +26,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   }
 
   // Failed login attempts and the initial session check are not a logout event.
-  if (res.status === 401 && !['/api/auth/login', '/api/auth/signup', '/api/auth/me'].includes(path)) {
+  if (res.status === 401 && !['/api/auth/login', '/api/auth/signup', '/api/auth/session'].includes(path)) {
     window.dispatchEvent(new Event('auth:expired'))
   }
 

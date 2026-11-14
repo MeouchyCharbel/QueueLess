@@ -29,7 +29,7 @@ beforeEach(() => {
 describe('AuthProvider logout', () => {
   it('keeps the user authenticated when logout fails', async () => {
     mockFetch.mockImplementation(async (path: string) => {
-      if (path === '/api/auth/me') return currentUser
+      if (path === '/api/auth/session') return { user: currentUser }
       if (path === '/api/auth/logout') throw new Error('Network unavailable')
       throw new Error('Unexpected request')
     })
@@ -43,7 +43,7 @@ describe('AuthProvider logout', () => {
   it('marks the user signed out only after successful logout', async () => {
     let finishLogout: ((value: null) => void) | undefined
     mockFetch.mockImplementation(async (path: string) => {
-      if (path === '/api/auth/me') return currentUser
+      if (path === '/api/auth/session') return { user: currentUser }
       if (path === '/api/auth/logout') return new Promise<null>((resolve) => { finishLogout = resolve })
       throw new Error('Unexpected request')
     })

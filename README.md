@@ -89,7 +89,10 @@ PostgreSQL on Neon                Resend (emails)
 QueueLess/
 ├── client/   # React front end (Vite, TypeScript, Tailwind CSS)
 ├── server/   # Express REST API (Prisma, PostgreSQL)
-└── docs/     # Wireframes and database schema
+├── docs/     # Wireframes and database schema
+├── .github/  # CI: tests, build and lint on every push and pull request
+└── neon.ts   # Neon CLI settings for temporary database branches (staging/tests);
+              # not part of the running app (root package.json holds its CLI packages)
 ```
 
 ## Running the API locally
@@ -112,6 +115,8 @@ cd server
 npm test          # Vitest + Supertest
 ```
 
+`server/tests/rateLimits.test.js` (per-visitor rate limits behind the proxies) and
+`server/tests/session.test.js` (page-load session check) need no database.
 `server/tests/appointments.test.js` checks booking conflicts, account isolation,
 authorization and cookie protection. It creates/deletes temporary test records,
 so it refuses to run unless `DATABASE_URL` names an isolated `queueless_test`
@@ -160,8 +165,9 @@ All bodies are JSON. 🔒 = requires HttpOnly session cookie (browser) or `Autho
 | Method | Path | Access | Success | Errors |
 |---|---|---|---|---|
 | GET | `/api/health` | public | 200 | — |
-| POST | `/api/auth/signup` | public | 201 `{ token, user }` | 400, 409, 429 |
-| POST | `/api/auth/login` | public | 200 `{ token, user }` | 400, 401, 429 |
+| POST | `/api/auth/signup` | public | 201 `{ user }` + session cookie | 400, 409, 429 |
+| POST | `/api/auth/login` | public | 200 `{ user }` + session cookie | 400, 401, 429 |
+| GET | `/api/auth/session` | public | 200 `{ user }` or `{ user: null }` (page-load check) | — |
 | GET | `/api/auth/me` | 🔒 | 200 user | 401 |
 | POST | `/api/auth/logout` | public | 204, clears browser session cookie | 403 |
 | GET | `/api/categories` | public | 200 list | — |
@@ -258,6 +264,14 @@ Each step is one commit. Milestones are marked with git tags.
 18. Front-end test: the booking form — **milestone-3**
 19. Deployment: API on Render, website on Vercel — **milestone-4**
 20. Final README and fresh-clone check — **final**
+21. UI redesign (Forest Green & Sand) and search improvements
+22. Cleaner mobile layout (desktop unchanged)
+23. Security and reliability fixes (merged pull request #1): HttpOnly cookie sessions,
+    one business per owner enforced by the database, conflicting appointment updates,
+    staging environment, GitHub Actions CI, isolated test database, more tests
+24. Audit fixes against sessions 22-23: per-visitor rate limits behind the Vercel proxy,
+    page-load session check without errors, smaller photos, long caching of build files,
+    code splitting, database indexes for the columns we filter by
 
 ## Deployment
 
@@ -270,17 +284,19 @@ Each step is one commit. Milestones are marked with git tags.
 
 Every push to `main` redeploys both. Health check: `/api/health`.
 
-### Browser authentication (Fix #3)
+### Browser authentication
 
-The updated React client uses same-origin `/api` requests and **does not store JWTs
-in localStorage**. Express sets a one-hour, HttpOnly, SameSite=Lax session cookie
-restricted to `/api`. Production cookies are Secure (HTTPS only). Browser requests
-are forwarded from Vercel to Render by the **first rewrite** in
-`client/vercel.json`. Local Vite proxies `/api` to `http://localhost:3000`.
-An origin check protects authenticated state-changing requests using cookies.
+The React client calls `/api` on its own website address and **never stores a
+JWT in JavaScript**. Express sets a one-hour, HttpOnly, SameSite=Lax session
+cookie restricted to `/api` (Secure in production); login and signup return only
+`{ user }`. On every page load the site asks `GET /api/auth/session`, which
+answers `{ user: null }` for visitors instead of an error. Vercel forwards
+`/api` requests to Render (`client/vercel.json`: preview deployments go to the
+staging API, the production site to the production API); locally, Vite
+forwards `/api` to `http://localhost:3000`. State-changing requests that use the
+cookie must come from the website's own origin (otherwise 403). API clients and
+tests can still send `Authorization: Bearer <token>`.
 
-For safe rollout, the Express API temporarily continues returning a bearer token
-on login/signup so the older frontend remains compatible while deployments
-are updated. The new browser frontend ignores that token. Rotate any compromised
-JWT or database secrets before production deployment. Validate login, refresh,
-logout, and booking on a preview deployment before merging to `main`.
+Because browser requests pass through two proxies (Vercel, then Render), the API
+trusts two proxy hops (`TRUST_PROXY_HOPS`, default 2) so rate limits are counted
+per visitor rather than shared by everyone.

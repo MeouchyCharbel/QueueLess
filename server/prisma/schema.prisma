@@ -71,6 +71,8 @@ model Service {
   business        Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
   staffServices   StaffService[]
   appointments    Appointment[]
+
+  @@index([businessId]) // services of one business
 }
 
 model Staff {
@@ -83,6 +85,8 @@ model Staff {
   workingHours  WorkingHours[]
   breaks        Break[]
   appointments  Appointment[]
+
+  @@index([businessId]) // staff of one business
 }
 
 // Which staff member can perform which service (many-to-many).
@@ -93,6 +97,7 @@ model StaffService {
   service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@id([staffId, serviceId])
+  @@index([serviceId]) // "who performs this service?"
 }
 
 // Opening hours for one weekday. Belongs to the whole business (businessId)
@@ -107,6 +112,9 @@ model WorkingHours {
   endTime    String
   business   Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
   staff      Staff?    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, weekday]) // hours of a business on a weekday
+  @@index([staffId, weekday]) // a staff member's own hours
 }
 
 // A break inside the working hours (for example lunch), same shape as above.
@@ -119,6 +127,9 @@ model Break {
   endTime    String
   business   Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
   staff      Staff?    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, weekday])
+  @@index([staffId, weekday])
 }
 
 // Overlapping active appointments for the same staff member are blocked by a
@@ -142,4 +153,5 @@ model Appointment {
 
   @@index([customerId])
   @@index([businessId, startAt])
+  @@index([staffId, startAt]) // availability: a staff member's bookings on a day
 }

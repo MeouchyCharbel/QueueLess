@@ -1,10 +1,8 @@
 name: QueueLess CI
 
-on:
-  push:
-    branches: [main, audit-fixes]
-  pull_request:
-    branches: [main]
+# Course session 23: run the tests on every push and pull request,
+# whatever the branch, so nothing reaches main untested.
+on: [push, pull_request]
 
 jobs:
   backend:

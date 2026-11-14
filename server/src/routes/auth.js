@@ -46,7 +46,7 @@ function setSession(res, token) {
 }
 
 
-// POST /api/auth/signup -> 201 { token, user } | 400 | 409
+// POST /api/auth/signup -> 201 { user } + session cookie | 400 | 409
 authRouter.post('/signup', validate(SignupInput), async (req, res) => {
   const { name, email, password, role } = req.body;
 
@@ -61,10 +61,10 @@ authRouter.post('/signup', validate(SignupInput), async (req, res) => {
       data: { name, email, passwordHash, role },
       select: PUBLIC_USER_FIELDS,
     });
-    const token = signToken(user);
-    setSession(res, token);
-    // Temporary bearer token compatibility for clients deployed before Fix #3.
-    res.status(201).json({ token, user });
+    setSession(res, signToken(user));
+    // The token travels only in the HttpOnly cookie, never in the JSON body,
+    // so browser JavaScript (or an XSS attack) can never read it.
+    res.status(201).json({ user });
   } catch (err) {
     // Two signups with the same email at the same moment: the unique index wins.
     if (err.code === 'P2002') {
@@ -74,7 +74,7 @@ authRouter.post('/signup', validate(SignupInput), async (req, res) => {
   }
 });
 
-// POST /api/auth/login -> 200 { token, user } | 400 | 401
+// POST /api/auth/login -> 200 { user } + session cookie | 400 | 401
 authRouter.post('/login', validate(LoginInput), async (req, res) => {
   const { email, password } = req.body;
 
@@ -88,10 +88,26 @@ authRouter.post('/login', validate(LoginInput), async (req, res) => {
   }
 
   const { id, name, role } = user;
-  const token = signToken(user);
-  setSession(res, token);
-  // Temporary bearer token compatibility for clients deployed before Fix #3.
-  res.json({ token, user: { id, name, email, role } });
+  setSession(res, signToken(user));
+  res.json({ user: { id, name, email, role } });
+});
+
+// GET /api/auth/session -> 200 { user } or { user: null }
+// The website asks this on every page load. A visitor without a session is a
+// normal case, not an error, so it answers 200 instead of 401.
+authRouter.get('/session', (req, res, next) => {
+  if (!req.headers.cookie?.includes('queueless_session=') && !req.headers.authorization) {
+    return res.json({ user: null });
+  }
+  // A session is present: check it with the usual middleware.
+  requireAuth(req, res, async () => {
+    try {
+      const user = await prisma.user.findUnique({ where: { id: req.userId }, select: PUBLIC_USER_FIELDS });
+      res.json({ user });
+    } catch (err) {
+      next(err);
+    }
+  });
 });
 
 // POST /api/auth/logout: clear the HttpOnly browser cookie.

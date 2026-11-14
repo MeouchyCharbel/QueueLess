@@ -10,8 +10,7 @@ export type User = {
 }
 
 export type AuthResponse = {
-  token: string
-  user: User
+  user: User // the session itself is an HttpOnly cookie
 }
 
 export type Category = {

@@ -16,9 +16,13 @@ import { appointmentsRouter } from './routes/appointments.js';
 
 export const app = express();
 
-// The live API runs behind the host's proxy; this lets the rate limiter
-// see each visitor's real IP address instead of the proxy's.
-app.set('trust proxy', 1);
+// Browser requests reach the live API through TWO proxies: Vercel (the
+// website forwards /api) and then Render's load balancer. Trusting both hops
+// lets req.ip be the visitor's own address, so each visitor gets their own
+// rate limit. With only 1 hop trusted, req.ip was Vercel's address and every
+// visitor shared one limit (5 wrong passwords anywhere locked login for all).
+// Locally and in tests there is no proxy, so req.ip is simply the caller.
+app.set('trust proxy', config.trustProxyHops);
 
 // Order matters: every request passes through these in this order.
 app.use(helmet()); // secure HTTP headers

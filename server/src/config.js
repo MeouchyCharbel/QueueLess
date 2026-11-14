@@ -20,6 +20,8 @@ if (previewHostSuffix && !/^-[a-z0-9-]+\.vercel\.app$/.test(previewHostSuffix)) 
 
 export const config = {
   port: Number(process.env.PORT) || 3000,
+  // Number of proxies in front of the API (Vercel + Render = 2).
+  trustProxyHops: Number(process.env.TRUST_PROXY_HOPS) || 2,
   clientOrigin: process.env.CLIENT_ORIGIN,
   previewHostSuffix,
   jwtSecret: process.env.JWT_SECRET,

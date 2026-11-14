@@ -1,6 +1,8 @@
+import { Suspense } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import AccountMenu from './AccountMenu'
 import Logo from './Logo'
+import { LoadingState } from './LoadStates'
 import MobileMenu from './MobileMenu'
 import { useAuth } from '../auth/useAuth'
 
@@ -94,7 +96,10 @@ export default function Layout() {
       </header>
 
       <main className={`${CONTAINER} flex-1 py-6 md:py-12`}>
-        <Outlet />
+        {/* Shown while a lazily loaded page is downloading */}
+        <Suspense fallback={<LoadingState />}>
+          <Outlet />
+        </Suspense>
       </main>
 
       <footer className="border-t border-line bg-card">
