@@ -119,8 +119,9 @@ npm test          # Vitest + Supertest
 `server/tests/session.test.js` (page-load session check) need no database.
 `server/tests/appointments.test.js` checks booking conflicts, account isolation,
 authorization and cookie protection. It creates/deletes temporary test records,
-so it refuses to run unless `DATABASE_URL` names an isolated `queueless_test`
-database and `QUEUELESS_ALLOW_TEST_WRITES=yes` is explicitly set. **Never run
+so it only runs when `DATABASE_URL` names an isolated `queueless_test`
+database and `QUEUELESS_ALLOW_TEST_WRITES=yes` is explicitly set; otherwise `npm test`
+still passes and reports those tests as **skipped** (13 skipped, 4 run). **Never run
 integration tests against production**. The GitHub Actions CI workflow creates
 an ephemeral PostgreSQL 16 test database, applies migrations and runs these
 checks automatically without any production credentials.
@@ -273,6 +274,7 @@ Each step is one commit. Milestones are marked with git tags.
     page-load session check without errors, smaller photos, long caching of build files,
     code splitting, database indexes for the columns we filter by
 25. Final audit: appointments can only be completed once they have started
+26. `npm test` in server/ skips the database tests instead of failing when no test database is configured
 
 ## Deployment
 
