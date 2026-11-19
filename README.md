@@ -19,7 +19,10 @@ traffic: the first request after that can take up to a minute.
 
 ## Quick start for graders
 
-Requires only **Node.js 20+**. We sent you a ready `server/.env` file privately
+**Only needed to run the project on your own computer.** The live website
+above needs no setup: just open it and log in with a demo account below.
+
+To run it locally you only need **Node.js 20+**. We sent you a ready `server/.env` file privately
 (it points to a database made for grading, with demo data already loaded).
 
 1. Save that file as `server/.env` in this folder.
