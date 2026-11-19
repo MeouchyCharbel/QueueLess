@@ -17,6 +17,29 @@ conflicting bookings on the server.
 The API runs on Render's free plan, which sleeps after 15 minutes without
 traffic: the first request after that can take up to a minute.
 
+## Quick start for graders
+
+**Only needed to run the project on your own computer.** The live website
+above needs no setup: just open it and log in with a demo account below.
+
+To run it locally you only need **Node.js 20+**. We sent you a ready `server/.env` file privately
+(it points to a database made for grading, with demo data already loaded).
+
+1. Save that file as `server/.env` in this folder.
+2. In one terminal: `cd server`, `npm install`, `npm run dev`
+3. In a second terminal: `cd client`, `npm install`, `npm run dev`
+4. Open http://localhost:5173
+
+The first page load can take a few seconds while the database wakes up.
+
+| Demo login (password `demo-pass-123`) | Role |
+|---|---|
+| `rami.demo@test.local` | Owner of Fade Studio (also `nour`, `hadi`, `mona`) |
+| `sara.demo@test.local` | Customer (also `ali`) |
+
+Without that file, follow "Running the API locally" below with your own
+PostgreSQL database.
+
 ## Features
 
 **Customers**
@@ -275,6 +298,7 @@ Each step is one commit. Milestones are marked with git tags.
     code splitting, database indexes for the columns we filter by
 25. Final audit: appointments can only be completed once they have started
 26. `npm test` in server/ skips the database tests instead of failing when no test database is configured
+27. Quick start for graders: run locally with only Node.js and a ready `server/.env`
 
 ## Deployment
 
