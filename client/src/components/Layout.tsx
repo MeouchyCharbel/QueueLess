@@ -1,6 +1,7 @@
-import { Suspense } from 'react'
+import { Suspense, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import AccountMenu from './AccountMenu'
+import Alert from './Alert'
 import Logo from './Logo'
 import { LoadingState } from './LoadStates'
 import MobileMenu from './MobileMenu'
@@ -18,13 +19,15 @@ function navClass({ isActive }: { isActive: boolean }) {
 function NavLinks() {
   const { user, checking, logout } = useAuth()
   const navigate = useNavigate()
+  const [logoutError, setLogoutError] = useState('')
 
   async function handleLogout() {
+    setLogoutError('')
     try {
       await logout()
       navigate('/')
     } catch {
-      window.alert('Could not log out. Check your connection and try again.')
+      setLogoutError('Could not log out. Check your connection and try again.')
     }
   }
 
@@ -71,6 +74,12 @@ function NavLinks() {
         </>
       )}
       <AccountMenu user={user} onLogout={handleLogout} />
+      {/* Shown just under the header, over the page, so nothing moves */}
+      {logoutError && (
+        <div className="absolute inset-x-0 top-full z-20 mx-auto max-w-md px-4 pt-2">
+          <Alert tone="error">{logoutError}</Alert>
+        </div>
+      )}
     </>
   )
 }

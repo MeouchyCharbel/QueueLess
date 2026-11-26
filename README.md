@@ -288,6 +288,7 @@ Each step is one commit. Milestones are marked with git tags.
 26. `npm test` in server/ skips the database tests instead of failing when no test database is configured
 27. Quick start for graders: run locally with only Node.js and a ready `server/.env`
 28. Removed email notifications and the Resend dependency (professor's request); the availability engine is the project's non-trivial custom feature
+29. A failed logout shows an error message on the page instead of a browser pop-up; the phone menu no longer nests a <nav> inside the main <nav>
 
 ## Deployment
 

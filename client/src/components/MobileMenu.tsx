@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router'
+import Alert from './Alert'
 import Icon from './Icons'
 import { useAuth } from '../auth/useAuth'
 
@@ -10,6 +11,7 @@ export default function MobileMenu() {
   const { user, checking, logout } = useAuth()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  const [logoutError, setLogoutError] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Close on a click outside the menu or the Escape key.
@@ -65,28 +67,35 @@ export default function MobileMenu() {
           id="mobile-menu"
           className="absolute inset-x-0 top-full z-20 border-b border-line bg-card px-4 pb-4 shadow-panel"
         >
-          <nav aria-label="Mobile" className="pt-2">
+          {/* A plain list: this menu already sits inside the main <nav> */}
+          <div className="pt-2">
             {links.map((link) => (
               <NavLink key={link.to} to={link.to} end onClick={close} className={linkClass}>
                 {link.label}
               </NavLink>
             ))}
-          </nav>
+          </div>
 
           <div className="mt-2 border-t border-line pt-4">
             {user ? (
               <>
                 <p className="px-2 text-sm font-semibold text-ink">Hi, {user.name.split(' ')[0]}</p>
                 <p className="truncate px-2 text-sm text-muted">{user.email}</p>
+                {logoutError && (
+                  <div className="mt-2">
+                    <Alert tone="error">{logoutError}</Alert>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={async () => {
+                    setLogoutError('')
                     try {
                       await logout()
                       close()
                       navigate('/')
                     } catch {
-                      window.alert('Could not log out. Check your connection and try again.')
+                      setLogoutError('Could not log out. Check your connection and try again.')
                     }
                   }}
                   className="mt-2 w-full rounded-md px-2 py-3 text-left text-[15px] font-semibold text-danger hover:bg-danger-soft"
