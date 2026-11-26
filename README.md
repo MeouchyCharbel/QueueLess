@@ -138,7 +138,8 @@ npm test          # Vitest + Supertest
 authorization and cookie protection. It creates/deletes temporary test records,
 so it only runs when `DATABASE_URL` names an isolated `queueless_test`
 database and `QUEUELESS_ALLOW_TEST_WRITES=yes` is explicitly set; otherwise `npm test`
-still passes and reports those tests as **skipped** (13 skipped, 4 run). **Never run
+still passes and reports those tests as **skipped** (13 skipped, 4 run), even
+on a fresh clone without `server/.env` (`tests/setup.js` fills in placeholder test settings). **Never run
 integration tests against production**. The GitHub Actions CI workflow creates
 an ephemeral PostgreSQL 16 test database, applies migrations and runs these
 checks automatically without any production credentials.
@@ -284,7 +285,7 @@ Each step is one commit. Milestones are marked with git tags (`milestone-1` to `
 28. Removed email notifications and the Resend dependency (professor's request); the availability engine is the project's non-trivial custom feature
 29. A failed logout shows an error message on the page instead of a browser pop-up; the phone menu no longer nests a <nav> inside the main <nav>
 30. The seed script loads `server/.env` itself; README setup fixes
-31. README: graders use the live site or their own `server/.env` (no secrets shared) — **final**
+31. README: graders use the live site or their own `server/.env` (no secrets shared); `npm test` in server/ also runs without a `.env` file — **final**
 
 ## Deployment
 
