@@ -19,26 +19,21 @@ traffic: the first request after that can take up to a minute.
 
 ## Quick start for graders
 
-**Only needed to run the project on your own computer.** The live website
-above needs no setup: just open it and log in with a demo account below.
+**The live website above needs no setup:** open it and log in with a demo
+account (password `demo-pass-123`):
 
-To run it locally you only need **Node.js 20+**. We sent you a ready `server/.env` file privately
-(it points to a database made for grading, with demo data already loaded).
-
-1. Save that file as `server/.env` in this folder.
-2. In one terminal: `cd server`, `npm install`, `npm run dev`
-3. In a second terminal: `cd client`, `npm install`, `npm run dev`
-4. Open http://localhost:5173
-
-The first page load can take a few seconds while the database wakes up.
-
-| Demo login (password `demo-pass-123`) | Role |
+| Demo login | Role |
 |---|---|
 | `rami.demo@test.local` | Owner of Fade Studio (also `nour`, `hadi`, `mona`) |
 | `sara.demo@test.local` | Customer (also `ali`) |
 
-Without that file, follow "Running the API locally" below with your own
-PostgreSQL database.
+**To run it on your own computer** you need Node.js 20+ and a PostgreSQL
+database (for example a free Neon project). Secrets are never committed, so
+create `server/.env` from `server/.env.example` and fill in your own
+`DATABASE_URL` and `JWT_SECRET`, then follow "Running the API locally" and
+"Running the front end locally" below. A new database starts with the
+categories only: sign up as an owner to create a business, then as a customer
+to book.
 
 ## Features
 
@@ -288,7 +283,8 @@ Each step is one commit. Milestones are marked with git tags (`milestone-1` to `
 27. Quick start for graders: run locally with only Node.js and a ready `server/.env`
 28. Removed email notifications and the Resend dependency (professor's request); the availability engine is the project's non-trivial custom feature
 29. A failed logout shows an error message on the page instead of a browser pop-up; the phone menu no longer nests a <nav> inside the main <nav>
-30. The seed script loads `server/.env` itself; README setup fixes — **final**
+30. The seed script loads `server/.env` itself; README setup fixes
+31. README: graders use the live site or their own `server/.env` (no secrets shared) — **final**
 
 ## Deployment
 
