@@ -97,7 +97,7 @@ export default function OwnerAppointmentCard({ appointment, onChanged }: Props) 
 
       {mode === 'confirm-cancel' && (
         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-danger-soft p-4">
-          <p className="mr-auto text-sm font-medium text-danger">Cancel this appointment? The customer will be emailed.</p>
+          <p className="mr-auto text-sm font-medium text-danger">Cancel this appointment?</p>
           <Button
             variant="danger"
             disabled={busy}

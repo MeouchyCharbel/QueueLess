@@ -10,7 +10,7 @@ import type { BusinessSummary, Category } from '../api/types'
 const FEATURES: { icon: IconName; title: string; text: string }[] = [
   { icon: 'calendar', title: 'Easy booking', text: 'Find and book services in seconds.' },
   { icon: 'bolt', title: 'Real-time availability', text: 'See up-to-date appointment slots.' },
-  { icon: 'mail', title: 'Email updates', text: 'Get notified when bookings change.' },
+  { icon: 'grid', title: 'One dashboard', text: 'Businesses manage every booking in one place.' },
 ]
 
 // Business search with category and location filters.

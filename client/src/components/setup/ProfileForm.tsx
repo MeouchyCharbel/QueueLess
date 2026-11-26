@@ -126,7 +126,7 @@ export default function ProfileForm({ businessId, initial, onSaved }: ProfileFor
           value={form.email}
           onChange={handleChange}
           error={errors.email}
-          hint="Booking notifications are sent here"
+          hint="Shown to customers on your business page"
         />
       </div>
       <Button type="submit" disabled={saving}>

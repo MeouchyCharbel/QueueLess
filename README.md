@@ -60,7 +60,6 @@ PostgreSQL database.
   length and existing bookings, in Beirut time
 - No double bookings, even when two customers book at the same moment
   (checked by the server and enforced by a PostgreSQL exclusion constraint)
-- Email notifications (Resend) for bookings, cancellations and reschedules
 - Responsive design for mobile and desktop
 
 ## Tech stack
@@ -71,7 +70,7 @@ PostgreSQL database.
 | Back end | Node.js, Express 5, REST API — deployed on Render |
 | Database | PostgreSQL on Neon, Prisma ORM |
 | Auth & security | HttpOnly SameSite JWT cookies (bearer API compatibility), bcrypt, zod, server-side roles, helmet, CORS, rate limiting |
-| Third-party API | Resend (email) |
+| Non-trivial custom feature | Availability engine + concurrency-safe booking (no third-party API) |
 | Tests | Vitest + Testing Library (front end), Vitest + Supertest (back end) |
 
 ## Architecture
@@ -87,9 +86,9 @@ Express API on Render
    helmet → cors (only the website) → JSON body limit → rate limits
    → routes → requireAuth (who are you?) → requireRole (are you allowed?)
    → zod validation → Prisma
-   │                                   │
-   ▼                                   ▼
-PostgreSQL on Neon                Resend (emails)
+   │
+   ▼
+PostgreSQL on Neon
 ```
 
 - **Separation of concerns:** `client/` and `server/` are separate programs
@@ -97,7 +96,7 @@ PostgreSQL on Neon                Resend (emails)
   server through `client/src/api/client.ts`.
 - **Server layout:** `src/routes/` (one file per resource), `src/middleware/`
   (auth, roles, validation, rate limits), `src/lib/` (availability engine,
-  time zone math, ownership checks, emails), `prisma/` (schema, migrations, seed).
+  time zone math, ownership checks), `prisma/` (schema, migrations, seed).
 - **Client layout:** `src/pages/` (one per screen), `src/components/`
   (reusable UI and feature components), `src/auth/` (login state shared through
   context), `src/hooks/useApi.ts` (loading / error / data for every request).
@@ -235,19 +234,8 @@ Example bodies:
 { "startAt": "2026-11-21T08:00:00.000Z" }   // reschedule
 ```
 
-### Email notifications (Resend)
-
-Booking, cancelling and rescheduling an appointment sends a plain-text email
-to the customer and to the business's contact email, through the
-[Resend](https://resend.com) API (`server/src/lib/notifications.js`). Emails
-are sent after the response, and a failed email is logged without failing
-the booking. Without `RESEND_API_KEY` the server prints the emails to the
-terminal instead. With the default sender `onboarding@resend.dev`, Resend
-only delivers to the address that owns the Resend account; a verified domain
-removes that limit.
-
 Appointment status flow: a booking starts as `PENDING`; the owner confirms it
-(`CONFIRMED`) and later marks it `COMPLETED`; either side can cancel an active
+(`CONFIRMED`) and marks it `COMPLETED` once it has started; either side can cancel an active
 appointment (customers only before it starts). When a customer reschedules,
 the appointment goes back to `PENDING` for the owner to confirm.
 
@@ -276,7 +264,7 @@ Each step is one commit. Milestones are marked with git tags.
 6. Business search API: category and location filters
 7. Availability engine: free time slots
 8. Appointments API: book, list, confirm, cancel, complete, reschedule
-9. Email notifications with Resend
+9. Email notifications with Resend (removed in step 28)
 10. Back-end test: overlapping bookings are rejected — **milestone-2**
 11. Front-end scaffold: Vite, React, TypeScript, Tailwind, routing
 12. Front-end auth: API client, login and signup pages, protected pages
@@ -299,6 +287,7 @@ Each step is one commit. Milestones are marked with git tags.
 25. Final audit: appointments can only be completed once they have started
 26. `npm test` in server/ skips the database tests instead of failing when no test database is configured
 27. Quick start for graders: run locally with only Node.js and a ready `server/.env`
+28. Removed email notifications and the Resend dependency (professor's request); the availability engine is the project's non-trivial custom feature
 
 ## Deployment
 
@@ -307,7 +296,7 @@ Each step is one commit. Milestones are marked with git tags.
 | Root directory | `server` | `client` |
 | Build | `npm install && npm run build` (runs `prisma migrate deploy` and the seed) | Vite preset (`npm run build`) |
 | Start | `npm start` | static files; `vercel.json` sends every path to `index.html` |
-| Settings | `DATABASE_URL`, `JWT_SECRET`, `RESEND_API_KEY`, `CLIENT_ORIGIN` (the website URL, no trailing slash) | `/api` proxied through `client/vercel.json`; no browser API URL secret required |
+| Settings | `DATABASE_URL`, `JWT_SECRET`, `CLIENT_ORIGIN` (the website URL, no trailing slash) | `/api` proxied through `client/vercel.json`; no browser API URL secret required |
 
 Every push to `main` redeploys both. Health check: `/api/health`.
 

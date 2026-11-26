@@ -54,12 +54,6 @@ const PATHS = {
   menu: <path d="M4 6h16M4 12h16M4 18h16" />,
   close: <path d="M18 6 6 18M6 6l12 12" />,
   bolt: <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z" />,
-  mail: (
-    <>
-      <rect x="2" y="4" width="20" height="16" rx="2" />
-      <path d="m22 7-10 6L2 7" />
-    </>
-  ),
 }
 
 export type IconName = keyof typeof PATHS
