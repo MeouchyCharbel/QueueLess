@@ -124,7 +124,7 @@ Requires Node.js 20+ and a PostgreSQL database (we use a free Neon project).
 ```bash
 cd server
 npm install
-cp .env.example .env        # then fill in the real values
+cp .env.example .env        # then fill in the real values (Windows cmd: copy .env.example .env)
 npm run db:migrate          # creates the tables
 npm run db:seed             # adds the business categories
 npm run dev                 # http://localhost:3000/api/health
@@ -154,8 +154,7 @@ Start the API first (see above), then in a second terminal:
 
 ```bash
 cd client
-npm install
-cp .env.example .env        # Vite proxies /api to localhost:3000
+npm install                 # no .env needed: Vite forwards /api to localhost:3000
 npm run dev                 # http://localhost:5173
 ```
 
@@ -254,7 +253,7 @@ when two customers book at the same moment.
 
 ## Build steps
 
-Each step is one commit. Milestones are marked with git tags.
+Each step is one commit. Milestones are marked with git tags (`milestone-1` to `milestone-4`, and `final` on the last step).
 
 1. Repository setup
 2. Express server scaffold
@@ -275,7 +274,7 @@ Each step is one commit. Milestones are marked with git tags.
 17. Owner dashboard: day and week views, confirm, cancel, reschedule, complete
 18. Front-end test: the booking form — **milestone-3**
 19. Deployment: API on Render, website on Vercel — **milestone-4**
-20. Final README and fresh-clone check — **final**
+20. Final README and fresh-clone check
 21. UI redesign (Forest Green & Sand) and search improvements
 22. Cleaner mobile layout (desktop unchanged)
 23. Security and reliability fixes (merged pull request #1): HttpOnly cookie sessions,
@@ -289,6 +288,7 @@ Each step is one commit. Milestones are marked with git tags.
 27. Quick start for graders: run locally with only Node.js and a ready `server/.env`
 28. Removed email notifications and the Resend dependency (professor's request); the availability engine is the project's non-trivial custom feature
 29. A failed logout shows an error message on the page instead of a browser pop-up; the phone menu no longer nests a <nav> inside the main <nav>
+30. The seed script loads `server/.env` itself; README setup fixes — **final**
 
 ## Deployment
 

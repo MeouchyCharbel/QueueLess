@@ -1,5 +1,7 @@
 // Fills the Category table with the business types from the proposal.
 // Safe to run more than once: upsert skips categories that already exist.
+// Loads server/.env itself, so it works however `npm install` was run.
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
